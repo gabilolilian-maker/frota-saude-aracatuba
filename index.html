@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Frota Saúde — Araçatuba</title>
+  <link rel="manifest" href="/manifest.json"/>
+  <meta name="theme-color" content="#0f2d52"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Frota Saúde"/>
+  <link rel="apple-touch-icon" href="/icons/icon-192.png"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Arial,Helvetica,sans-serif;background:#f0f2f7;color:#1a1a2e;}
+#app{display:flex;height:100vh;overflow:hidden;}
+#loading-screen{position:fixed;inset:0;background:#0f2d52;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:3000;gap:16px;}
+#loading-screen .spin{width:40px;height:40px;border:3px solid rgba(255,255,255,0.2);border-top-color:#c8972a;border-radius:50%;animation:spin .8s linear infinite;}
+#loading-screen p{color:rgba(255,255,255,0.7);font-size:13px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+#sidebar{width:224px;background:#0f2d52;display:flex;flex-direction:column;flex-shrink:0;}
+#sb-head{padding:18px 16px;border-bottom:1px solid rgba(255,255,255,0.12);}
+.logo-row{display:flex;align-items:center;gap:10px;}
+.logo-box{width:38px;height:38px;border-radius:8px;background:#1a4f8a;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(255,255,255,0.1);}
+.logo-t1{color:#ffffff;font-size:13px;font-weight:700;line-height:1.3;}
+.logo-t2{color:rgba(255,255,255,0.6);font-size:11px;margin-top:1px;}
+#sb-nav{flex:1;padding:10px 0;overflow-y:auto;}
+.nav-sep{padding:14px 16px 5px;color:rgba(255,255,255,0.45);font-size:10px;letter-spacing:.08em;text-transform:uppercase;}
+.nav-btn{display:flex;align-items:center;gap:9px;padding:10px 16px;color:rgba(255,255,255,0.8);font-size:14px;border:none;background:none;width:100%;text-align:left;cursor:pointer;border-left:2px solid transparent;transition:background .15s;}
+.nav-btn:hover{background:rgba(255,255,255,0.08);color:#fff;}
+.nav-btn.active{background:rgba(255,255,255,0.13);color:#ffffff;font-weight:700;border-left:2px solid #c8972a;}
+.nav-btn i{font-size:17px;}
+.nav-badge{background:#c0392b;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px;margin-left:auto;display:none;}
+#sb-foot{padding:12px 16px;border-top:1px solid rgba(255,255,255,0.12);}
+.u-row{display:flex;align-items:center;gap:8px;}
+.u-av{width:32px;height:32px;border-radius:50%;background:#c8972a;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;flex-shrink:0;}
+.u-name{color:#ffffff;font-size:12px;font-weight:600;}
+.u-role{color:rgba(255,255,255,0.55);font-size:11px;}
+.btn-out{background:none;border:none;color:rgba(255,255,255,0.4);cursor:pointer;padding:4px;margin-left:auto;font-size:18px;}
+.btn-out:hover{color:#fff;}
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+#topbar{background:#ffffff;border-bottom:1px solid #e0e0e0;padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+#tb-title{font-size:16px;font-weight:700;color:#1a1a2e;}
+#tb-acts{display:flex;align-items:center;gap:8px;}
+#content{flex:1;overflow-y:auto;padding:22px 26px;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:8px;font-size:13px;cursor:pointer;border:1px solid #d0d0d0;background:#ffffff;color:#1a1a2e;font-family:Arial,sans-serif;transition:background .15s;}
+.btn:hover{background:#f5f5f5;}
+.btn-p{background:#1a4f8a;color:#fff;border-color:#1a4f8a;}
+.btn-p:hover{background:#2a63a8;}
+.btn-d{background:#c0392b;color:#fff;border-color:#c0392b;}
+.btn-d:hover{background:#a93226;}
+.btn-sm{padding:6px 12px;font-size:12px;}
+.btn-xs{padding:4px 9px;font-size:12px;}
+.btn-clr{background:#f5f5f5;color:#666;border-color:#e0e0e0;}
+.card{background:#ffffff;border-radius:10px;border:1px solid #e8e8e8;padding:18px 22px;}
+.card-title{font-size:11px;font-weight:700;color:#888;margin-bottom:14px;display:flex;align-items:center;gap:6px;text-transform:uppercase;letter-spacing:.05em;}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px;}
+.metric{background:#ffffff;border:1px solid #e8e8e8;border-radius:10px;padding:16px 18px;}
+.metric-lbl{font-size:11px;color:#888;margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em;}
+.metric-val{font-size:28px;font-weight:700;color:#1a1a2e;line-height:1;}
+.metric-sub{font-size:11px;color:#aaa;margin-top:5px;}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;}
+.b-blue{background:#dbeafe;color:#1e40af;}
+.b-gold{background:#fef3c7;color:#92400e;}
+.b-red{background:#fee2e2;color:#991b1b;}
+.b-green{background:#d1fae5;color:#065f46;}
+.b-gray{background:#f3f4f6;color:#6b7280;}
+.atraso-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:99px;font-size:10px;font-weight:700;background:#fee2e2;color:#991b1b;margin-left:5px;}
+.alert-bar{display:flex;align-items:center;gap:10px;padding:8px 14px;background:#fff;border:1px solid #fca5a5;border-radius:8px;margin-bottom:6px;cursor:pointer;transition:background .15s;user-select:none;}
+.alert-bar:hover{background:#fff5f5;}
+.alert-bar-icon{color:#c0392b;font-size:16px;flex-shrink:0;}
+.alert-bar-text{font-size:12px;color:#991b1b;font-weight:700;flex:1;}
+.alert-bar-sub{font-size:11px;color:#aaa;margin-left:4px;font-weight:400;}
+.alert-bar-badge{background:#c0392b;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;flex-shrink:0;}
+.alert-bar-toggle{font-size:11px;color:#c0392b;display:flex;align-items:center;gap:3px;flex-shrink:0;}
+.alert-list{display:none;background:#fff;border:1px solid #fca5a5;border-top:none;border-radius:0 0 8px 8px;margin-bottom:14px;overflow:hidden;}
+.alert-list.open{display:block;}
+.alert-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid #fff0f0;}
+.alert-item:last-child{border-bottom:none;}
+.alert-item:hover{background:#fff8f8;}
+.alert-os{font-size:12px;font-weight:700;color:#1a4f8a;width:90px;flex-shrink:0;}
+.alert-info{flex:1;min-width:0;}
+.alert-frota{font-size:12px;color:#555;}
+.alert-etapa-txt{font-size:11px;color:#888;margin-top:1px;}
+.alert-dias-pill{font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;flex-shrink:0;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;padding:10px 13px;color:#888;font-weight:700;font-size:11px;border-bottom:1px solid #eee;text-transform:uppercase;letter-spacing:.04em;background:#fafafa;}
+td{padding:11px 13px;border-bottom:1px solid #f0f0f0;color:#1a1a2e;vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:#fafafa;}
+.stepper{display:flex;flex-direction:column;}
+.step{display:flex;gap:14px;align-items:flex-start;}
+.step-line{display:flex;flex-direction:column;align-items:center;}
+.step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+.dot-done{background:#065f46;color:#fff;}
+.dot-active{background:#1a4f8a;color:#fff;}
+.dot-pend{background:#f3f4f6;color:#6b7280;border:1px solid #ddd;}
+.step-conn{width:1px;flex:1;min-height:16px;background:#e0e0e0;margin:3px 0;}
+.step-body{flex:1;padding-bottom:20px;}
+.step-title{font-size:13px;font-weight:700;color:#1a1a2e;margin-bottom:3px;}
+.step-meta{font-size:12px;color:#888;}
+.step-act{margin-top:10px;}
+.fg{margin-bottom:14px;}
+.fl{display:block;font-size:11px;font-weight:700;color:#666;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em;}
+.fi{width:100%;padding:9px 12px;border:1px solid #d0d0d0;border-radius:8px;font-size:13px;background:#fff;color:#1a1a2e;font-family:Arial,sans-serif;}
+.fi:focus{outline:none;border-color:#1a4f8a;box-shadow:0 0 0 3px rgba(26,79,138,0.1);}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.fs{width:100%;padding:9px 12px;border:1px solid #d0d0d0;border-radius:8px;font-size:13px;background:#fff;color:#1a1a2e;font-family:Arial,sans-serif;}
+.fs:focus{outline:none;border-color:#1a4f8a;}
+.tseg{display:flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid #d0d0d0;border-radius:8px;cursor:pointer;font-size:13px;color:#1a1a2e;background:#f9f9f9;width:100%;margin-top:8px;font-family:Arial,sans-serif;}
+.tseg.on{border-color:#c8972a;background:#fef3c7;color:#92400e;}
+.ticon{width:22px;height:13px;border-radius:7px;background:#ccc;position:relative;transition:background .2s;flex-shrink:0;}
+.ticon.on{background:#c8972a;}
+.ticon::after{content:'';position:absolute;width:9px;height:9px;border-radius:50%;background:#fff;top:2px;left:2px;transition:left .2s;}
+.ticon.on::after{left:11px;}
+.mover{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;}
+.modal{background:#fff;border-radius:12px;border:1px solid #ddd;width:480px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2);}
+.mhead{padding:18px 22px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;}
+.mhead h2{font-size:15px;font-weight:700;color:#1a1a2e;}
+.mbody{padding:22px;}
+.mfoot{padding:14px 22px;border-top:1px solid #eee;display:flex;justify-content:flex-end;gap:8px;background:#fafafa;border-radius:0 0 12px 12px;}
+.mbtn-close{background:none;border:none;cursor:pointer;color:#888;font-size:20px;}
+#login-wrap{position:fixed;inset:0;background:#0f2d52;display:flex;align-items:center;justify-content:center;z-index:2000;}
+.login-card{background:#fff;border-radius:14px;padding:40px 44px;width:380px;box-shadow:0 30px 80px rgba(0,0,0,0.3);}
+.login-logo{text-align:center;margin-bottom:30px;}
+.login-lc{width:68px;height:68px;border-radius:14px;background:#1a4f8a;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;}
+.login-logo h2{font-size:18px;font-weight:700;color:#1a1a2e;}
+.login-logo p{font-size:13px;color:#888;margin-top:4px;}
+.bar-row{display:flex;align-items:center;gap:10px;font-size:12px;margin-bottom:10px;}
+.bar-lbl{width:140px;flex-shrink:0;color:#666;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bar-track{flex:1;height:13px;background:#f0f0f0;border-radius:99px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:99px;background:#1a4f8a;}
+.bar-val{width:90px;text-align:right;color:#1a1a2e;font-weight:700;}
+.tempo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.tempo-card{background:#f8f9ff;border:1px solid #e0e8ff;border-radius:10px;padding:14px 16px;text-align:center;}
+.tempo-etapa{font-size:10px;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;}
+.tempo-val{font-size:22px;font-weight:700;color:#1a4f8a;}
+.tempo-unit{font-size:11px;color:#aaa;margin-top:2px;}
+.tempo-bar{height:5px;background:#e0e8ff;border-radius:99px;margin-top:10px;overflow:hidden;}
+.tempo-bar-fill{height:100%;border-radius:99px;background:#1a4f8a;}
+.cc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;}
+.cc-card{background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:16px;}
+.cc-icon{width:36px;height:36px;border-radius:8px;background:#dbeafe;display:flex;align-items:center;justify-content:center;color:#1a4f8a;font-size:18px;margin-bottom:10px;}
+.cc-title{font-size:13px;font-weight:700;color:#1a1a2e;}
+.cc-sub{font-size:12px;color:#888;margin-top:3px;}
+.cc-tag{font-size:12px;color:#1a4f8a;margin-top:5px;}
+.cc-acts{display:flex;gap:6px;margin-top:12px;}
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.sec-head h2{font-size:16px;font-weight:700;color:#1a1a2e;}
+.sec-cnt{font-size:13px;color:#888;font-weight:400;}
+.irow{display:flex;flex-direction:column;gap:3px;}
+.ilbl{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.04em;}
+.ival{font-size:13px;color:#1a1a2e;font-weight:700;}
+.filtros{display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:12px;align-items:end;}
+.tag-filtro{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;background:#dbeafe;color:#1e40af;border-radius:99px;font-size:11px;font-weight:700;margin-right:6px;margin-bottom:6px;}
+.toast{position:fixed;bottom:24px;right:24px;background:#1a1a2e;color:#fff;padding:12px 18px;border-radius:8px;font-size:13px;z-index:9999;display:flex;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,0.3);animation:slideIn .3s ease;}
+@keyframes slideIn{from{transform:translateY(20px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+@media(max-width:768px){
+  #sidebar{width:60px;}
+  .logo-t1,.logo-t2,.nav-btn span,.nav-sep,.u-name,.u-role{display:none;}
+  .nav-btn{justify-content:center;padding:12px;}
+  .logo-box{margin:0 auto;}
+  .metrics{grid-template-columns:repeat(2,1fr);}
+  #content{padding:14px;}
+  .filtros{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loading-screen">
+  <svg width="50" height="50" viewBox="0 0 52 52" fill="none">
+    <circle cx="20" cy="33" r="10" fill="none" stroke="white" stroke-width="2.2"/>
+    <rect x="17.5" y="21" width="5" height="4" rx="1" fill="white"/>
+    <rect x="17.5" y="39" width="5" height="4" rx="1" fill="white"/>
+    <rect x="8" y="30.5" width="4" height="5" rx="1" fill="white"/>
+    <rect x="28" y="30.5" width="4" height="5" rx="1" fill="white"/>
+    <rect x="11.5" y="23.5" width="4" height="4" rx="1" fill="white" transform="rotate(45,13.5,25.5)"/>
+    <rect x="25.5" y="23.5" width="4" height="4" rx="1" fill="white" transform="rotate(45,27.5,25.5)"/>
+    <rect x="11.5" y="36" width="4" height="4" rx="1" fill="white" transform="rotate(45,13.5,38)"/>
+    <rect x="25.5" y="36" width="4" height="4" rx="1" fill="white" transform="rotate(45,27.5,38)"/>
+    <circle cx="20" cy="33" r="4" fill="#0f2d52" stroke="white" stroke-width="1.8"/>
+    <circle cx="33" cy="19" r="8" fill="none" stroke="#c8972a" stroke-width="2"/>
+    <rect x="30.5" y="9.5" width="5" height="3.5" rx="1" fill="#c8972a"/>
+    <rect x="30.5" y="26" width="5" height="3.5" rx="1" fill="#c8972a"/>
+    <rect x="22.5" y="16.5" width="3.5" height="5" rx="1" fill="#c8972a"/>
+    <rect x="39" y="16.5" width="3.5" height="5" rx="1" fill="#c8972a"/>
+    <rect x="26" y="12" width="3.5" height="3.5" rx="1" fill="#c8972a" transform="rotate(45,27.75,13.75)"/>
+    <rect x="38" y="12" width="3.5" height="3.5" rx="1" fill="#c8972a" transform="rotate(45,39.75,13.75)"/>
+    <rect x="26" y="22" width="3.5" height="3.5" rx="1" fill="#c8972a" transform="rotate(45,27.75,23.75)"/>
+    <rect x="38" y="22" width="3.5" height="3.5" rx="1" fill="#c8972a" transform="rotate(45,39.75,23.75)"/>
+    <circle cx="33" cy="19" r="3" fill="#0f2d52" stroke="#c8972a" stroke-width="1.5"/>
+    <circle cx="27" cy="26" r="2" fill="white" opacity="0.5"/>
+  </svg>
+  <div class="spin"></div>
+  <p>Conectando ao banco de dados...</p>
+</div>
+
+<!-- Login -->
+<div id="login-wrap" style="display:none;">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-lc">
+        <svg width="40" height="40" viewBox="0 0 52 52" fill="none">
+          <circle cx="20" cy="33" r="10" fill="none" stroke="white" stroke-width="2.2"/>
+          <rect x="17.5" y="21" width="5" height="4" rx="1" fill="white"/>
+          <rect x="17.5" y="39" width="5" height="4" rx="1" fill="white"/>
+          <rect x="8" y="30.5" width="4" height="5" rx="1" fill="white"/>
+          <rect x="28" y="30.5" width="4" height="5" rx="1" fill="white"/>
+          <rect x="11.5" y="23.5" width="4" height="4" rx="1" fill="white" transform="rotate(45,13.5,25.5)"/>
+          <rect x="25.5" y="23.5" width="4" height="4" rx="1" fill="white" transform="rotate(45,27.5,25.5)"/>
+          <rect x="11.5" y="36" width="4" height="4" rx="1" fill="white" transform="rotate(45,13.5,38)"/>
+          <rect x="25.5" y="36" width="4" height="4" rx="1" fill="white" transform="rotate(45,27.5,38)"/>
+          <circle cx="20" cy="33" r="4" fill="#0f2d52" stroke="white" stroke-width="1.8"/>
+          <circle cx="33" cy="19" r="8" fill="none" stroke="#c8972a" stroke-width="2"/>
+          <rect x="30.5" y="9.5" width="5" height="3.5" rx="1" fill="#c8972a"/>
+          <rect x="30.5" y="26" width="5" height="3.5" rx="1" fill="#c8972a"/>
+          <rect x="22.5" y="16.5" width="3.5" height="5" rx="1" fill="#c8972a"/>
+          <rect x="39" y="16.5" width="3.5" height="5" rx="1" fill="#c8972a"/>
+          <rect x="26" y="12" width="3.5" height="3.5" rx="1" fill="#c8972a" transform="rotate(45,27.75,13.75)"/>
+          <rect x="38" y="12" width="3.5" height="3.5" rx="1" fill="#c8972a" transform="rotate(45,39.75,13.75)"/>
+          <rect x="26" y="22" width="3.5" height="3.5" rx="1" fill="#c8972a" transform="rotate(45,27.75,23.75)"/>
+          <rect x="38" y="22" width="3.5" height="3.5" rx="1" fill="#c8972a" transform="rotate(45,39.75,23.75)"/>
+          <circle cx="33" cy="19" r="3" fill="#0f2d52" stroke="#c8972a" stroke-width="1.5"/>
+          <circle cx="27" cy="26" r="2" fill="white" opacity="0.5"/>
+        </svg>
+      </div>
+      <h2>Frota Saúde</h2>
+      <p>Prefeitura de Araçatuba — SP</p>
+    </div>
+    <div class="fg"><label class="fl">Usuário</label><input class="fi" id="li-u" placeholder="seu.usuario"/></div>
+    <div class="fg"><label class="fl">Senha</label><input class="fi" type="password" id="li-p" placeholder="••••••••"/></div>
+    <div id="login-erro" style="display:none;background:#fee2e2;border-radius:8px;padding:10px 14px;font-size:12px;color:#991b1b;margin-bottom:12px;"></div>
+    <button class="btn btn-p" style="width:100%;justify-content:center;padding:10px;" onclick="doLogin()"><i class="ti ti-login"></i> Entrar no sistema</button>
+  </div>
+</div>
+
+<div id="app">
+  <div id="sidebar">
+    <div id="sb-head">
+      <div class="logo-row">
+        <div class="logo-box">
+          <svg width="22" height="22" viewBox="0 0 52 52" fill="none">
+            <circle cx="20" cy="33" r="10" fill="none" stroke="white" stroke-width="2.2"/>
+            <rect x="17.5" y="21" width="5" height="4" rx="1" fill="white"/>
+            <rect x="17.5" y="39" width="5" height="4" rx="1" fill="white"/>
+            <rect x="8" y="30.5" width="4" height="5" rx="1" fill="white"/>
+            <rect x="28" y="30.5" width="4" height="5" rx="1" fill="white"/>
+            <rect x="11.5" y="23.5" width="4" height="4" rx="1" fill="white" transform="rotate(45,13.5,25.5)"/>
+            <rect x="25.5" y="23.5" width="4" height="4" rx="1" fill="white" transform="rotate(45,27.5,25.5)"/>
+            <rect x="11.5" y="36" width="4" height="4" rx="1" fill="white" transform="rotate(45,13.5,38)"/>
+            <rect x="25.5" y="36" width="4" height="4" rx="1" fill="white" transform="rotate(45,27.5,38)"/>
+            <circle cx="20" cy="33" r="4" fill="#0f2d52" stroke="white" stroke-width="1.8"/>
+            <circle cx="33" cy="19" r="8" fill="none" stroke="#c8972a" stroke-width="2"/>
+            <rect x="30.5" y="9.5" width="5" height="3.5" rx="1" fill="#c8972a"/>
+            <rect x="30.5" y="26" width="5" height="3.5" rx="1" fill="#c8972a"/>
+            <rect x="22.5" y="16.5" width="3.5" height="5" rx="1" fill="#c8972a"/>
+            <rect x="39" y="16.5" width="3.5" height="5" rx="1" fill="#c8972a"/>
+            <rect x="26" y="12" width="3.5" height="3.5" rx="1" fill="#c8972a" transform="rotate(45,27.75,13.75)"/>
+            <rect x="38" y="12" width="3.5" height="3.5" rx="1" fill="#c8972a" transform="rotate(45,39.75,13.75)"/>
+            <rect x="26" y="22" width="3.5" height="3.5" rx="1" fill="#c8972a" transform="rotate(45,27.75,23.75)"/>
+            <rect x="38" y="22" width="3.5" height="3.5" rx="1" fill="#c8972a" transform="rotate(45,39.75,23.75)"/>
+            <circle cx="33" cy="19" r="3" fill="#0f2d52" stroke="#c8972a" stroke-width="1.5"/>
+            <circle cx="27" cy="26" r="2" fill="white" opacity="0.5"/>
+          </svg>
+        </div>
+        <div><div class="logo-t1">Frota Saúde</div><div class="logo-t2">Araçatuba — SP</div></div>
+      </div>
+    </div>
+    <nav id="sb-nav">
+      <button class="nav-btn active" id="nav-dashboard" onclick="nav('dashboard')"><i class="ti ti-layout-dashboard"></i> <span>Dashboard</span> <span class="nav-badge" id="nb-dash"></span></button>
+      <button class="nav-btn" id="nav-os-lista" onclick="nav('os-lista')"><i class="ti ti-clipboard-list"></i> <span>Ordens de Serviço</span> <span class="nav-badge" id="nb-os"></span></button>
+      <div class="nav-sep">Relatórios</div>
+      <button class="nav-btn" id="nav-relatorios" onclick="nav('relatorios')"><i class="ti ti-chart-bar"></i> <span>Relatórios</span></button>
+      <div id="admin-nav">
+        <div class="nav-sep">Administração</div>
+        <button class="nav-btn" id="nav-veiculos" onclick="nav('veiculos')"><i class="ti ti-ambulance"></i> <span>Veículos</span></button>
+        <button class="nav-btn" id="nav-oficinas" onclick="nav('oficinas')"><i class="ti ti-tool"></i> <span>Oficinas</span></button>
+        <button class="nav-btn" id="nav-usuarios" onclick="nav('usuarios')"><i class="ti ti-users"></i> <span>Usuários</span></button>
+      </div>
+    </nav>
+    <div id="sb-foot">
+      <div class="u-row">
+        <div class="u-av" id="u-av">AD</div>
+        <div style="flex:1;min-width:0;"><div class="u-name" id="u-nm">Administrador</div><div class="u-role" id="u-rl">Administrativo</div></div>
+        <button class="btn-out" onclick="doLogout()" title="Sair"><i class="ti ti-logout"></i></button>
+      </div>
+    </div>
+  </div>
+  <div id="main">
+    <div id="topbar"><span id="tb-title">Dashboard</span><div id="tb-acts"></div></div>
+    <div id="content"></div>
+  </div>
+</div>
+<div id="mwrap"></div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCDvysNe-KpeLwk-MIQnpEFTmuH1gYds4Y",
+  authDomain: "frota-saude-aracatuba.firebaseapp.com",
+  projectId: "frota-saude-aracatuba",
+  storageBucket: "frota-saude-aracatuba.firebasestorage.app",
+  messagingSenderId: "995255052522",
+  appId: "1:995255052522:web:3e8565c7aa3759636a8f93"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Estado global
+const S = {
+  user: null,
+  usuarios: [],
+  veiculos: [],
+  oficinas: [],
+  os: []
+};
+
+const LIMITE_DIAS = 10;
+const ENAMES = ['Solicitação de Orçamento','Aprovação do Orçamento','Solicitação de Empenho','Liberação do Empenho','Comunicação para Oficina','Atesto de Nota Fiscal'];
+const ADM_ONLY = [4,6];
+const imap = {'Ambulância':'ti-ambulance','Van':'ti-car','Van Cadeirante':'ti-wheelchair','Ônibus':'ti-bus','Carro Passeio':'ti-car','Administrativo':'ti-briefcase'};
+
+// ===================== FIREBASE HELPERS =====================
+async function fbGet(col) {
+  const snap = await getDocs(collection(db, col));
+  return snap.docs.map(d => ({id: d.id, ...d.data()}));
+}
+async function fbAdd(col, data) {
+  const ref = await addDoc(collection(db, col), data);
+  return ref.id;
+}
+async function fbUpdate(col, id, data) {
+  await updateDoc(doc(db, col, id), data);
+}
+
+// ===================== DADOS INICIAIS =====================
+async function initDados() {
+  // Verifica se já tem dados, senão popula com dados iniciais
+  const usuarios = await fbGet('usuarios');
+  if (usuarios.length === 0) {
+    await fbAdd('usuarios', {nome:'Carlos Administrador',login:'admin',senha:'1234',perfil:'Administrativo',ativo:true});
+    await fbAdd('usuarios', {nome:'Ana Logística',login:'logistica',senha:'1234',perfil:'Logística',ativo:true});
+    await fbAdd('usuarios', {nome:'Pedro Logística',login:'pedro',senha:'1234',perfil:'Logística',ativo:true});
+  }
+  const oficinas = await fbGet('oficinas');
+  if (oficinas.length === 0) {
+    const ofs = [
+      {nome:'Oficina Central',tipo:'Mecânica Geral'},
+      {nome:'Auto Elétrica Silva',tipo:'Elétrica'},
+      {nome:'Funilaria Araçatuba',tipo:'Funilaria/Pintura'},
+      {nome:'Mecânica Pesada Norte',tipo:'Veículos Pesados'},
+      {nome:'Revisão Express',tipo:'Mecânica Geral'},
+      {nome:'Climatização Frio Total',tipo:'Ar Condicionado'},
+      {nome:'Centro Auto Leste',tipo:'Mecânica Geral'},
+    ];
+    for (const o of ofs) await fbAdd('oficinas', o);
+  }
+  const veiculos = await fbGet('veiculos');
+  if (veiculos.length === 0) {
+    const vs = [
+      {frota:'001',tipo:'Ambulância',placa:'ABC-1234',modelo:'Renault Master 2021',oficina_id:''},
+      {frota:'002',tipo:'Ambulância',placa:'DEF-5678',modelo:'Fiat Ducato 2020',oficina_id:''},
+      {frota:'003',tipo:'Van',placa:'GHI-9012',modelo:'Sprinter 2019',oficina_id:''},
+      {frota:'004',tipo:'Van Cadeirante',placa:'JKL-3456',modelo:'Doblo 2022',oficina_id:''},
+      {frota:'005',tipo:'Ônibus',placa:'MNO-7890',modelo:'OF 1721 2018',oficina_id:''},
+      {frota:'006',tipo:'Carro Passeio',placa:'PQR-1357',modelo:'Sandero 2023',oficina_id:''},
+      {frota:'007',tipo:'Administrativo',placa:'STU-2468',modelo:'Onix 2022',oficina_id:''},
+    ];
+    for (const v of vs) await fbAdd('veiculos', v);
+  }
+}
+
+async function carregarDados() {
+  S.usuarios = await fbGet('usuarios');
+  S.veiculos = await fbGet('veiculos');
+  S.oficinas = await fbGet('oficinas');
+  S.os = await fbGet('os');
+  // Ordenar OS por número
+  S.os.sort((a,b) => (a.numero||'').localeCompare(b.numero||''));
+}
+
+// ===================== UTILITÁRIOS =====================
+function diasParados(os) {
+  if (os.cancelada || os.status === 'concluida') return 0;
+  if (!os.ultima_etapa_data) return 0;
+  const hoje = new Date();
+  const d = new Date(os.ultima_etapa_data + 'T00:00:00');
+  return Math.floor((hoje - d) / (1000*60*60*24));
+}
+function getV(os) { return S.veiculos.find(x => x.id === os.veiculo_id); }
+function getOf(os) { return os.seguradora ? 'Seguradora' : (S.oficinas.find(x => x.id === os.oficina_id)?.nome || '—'); }
+function osAtrasadas() { return S.os.filter(o => !o.cancelada && o.status !== 'concluida' && diasParados(o) >= LIMITE_DIAS).sort((a,b) => diasParados(b) - diasParados(a)); }
+function gerarNumOS() {
+  const ano = new Date().getFullYear();
+  const n = S.os.length + 1;
+  return `OS-${ano}-${String(n).padStart(3,'0')}`;
+}
+function toast(msg, tipo='ok') {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.style.background = tipo === 'erro' ? '#c0392b' : '#065f46';
+  el.innerHTML = `<i class="ti ti-${tipo==='erro'?'x':'check'}"></i> ${msg}`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+function sbadge(os) {
+  const d = diasParados(os);
+  if (os.cancelada) return '<span class="badge b-red"><i class="ti ti-x" style="font-size:10px"></i> Cancelada</span>';
+  if (os.status === 'concluida') return '<span class="badge b-green"><i class="ti ti-check" style="font-size:10px"></i> Concluída</span>';
+  return `<span class="badge b-blue">Etapa ${os.etapa_atual}/6</span>${d >= LIMITE_DIAS ? `<span class="atraso-badge"><i class="ti ti-alert-triangle" style="font-size:9px"></i> ${d}d</span>` : ''}`;
+}
+
+function atualizarBadges() {
+  const n = osAtrasadas().length;
+  ['nb-dash','nb-os'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = n; el.style.display = n ? 'inline-flex' : 'none'; }
+  });
+}
+
+// ===================== AUTH =====================
+async function doLogin() {
+  const u = document.getElementById('li-u').value.trim();
+  const p = document.getElementById('li-p').value.trim();
+  const f = S.usuarios.find(x => x.login === u && x.senha === p && x.ativo);
+  const err = document.getElementById('login-erro');
+  if (!f) { err.style.display='block'; err.textContent='Usuário ou senha incorretos.'; return; }
+  err.style.display='none';
+  S.user = f;
+  document.getElementById('login-wrap').style.display = 'none';
+  document.getElementById('u-av').textContent = f.nome.split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('u-nm').textContent = f.nome;
+  document.getElementById('u-rl').textContent = f.perfil;
+  document.getElementById('admin-nav').style.display = f.perfil === 'Administrativo' ? 'block' : 'none';
+  atualizarBadges();
+  nav('dashboard');
+}
+
+function doLogout() {
+  S.user = null;
+  document.getElementById('login-wrap').style.display = 'flex';
+  document.getElementById('li-u').value = '';
+  document.getElementById('li-p').value = '';
+}
+
+// ===================== NAVEGAÇÃO =====================
+function nav(page) {
+  document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
+  const el = document.getElementById('nav-' + page); if (el) el.classList.add('active');
+  const titles = {dashboard:'Dashboard','os-lista':'Ordens de Serviço',relatorios:'Relatórios',veiculos:'Veículos',oficinas:'Oficinas',usuarios:'Usuários'};
+  document.getElementById('tb-title').textContent = titles[page] || page;
+  const act = document.getElementById('tb-acts'); act.innerHTML = '';
+  if (page === 'os-lista') act.innerHTML = `<button class="btn btn-p btn-sm" onclick="openNovaOS()"><i class="ti ti-plus"></i> Nova OS</button>`;
+  if (page === 'veiculos' && S.user?.perfil === 'Administrativo') act.innerHTML = `<button class="btn btn-p btn-sm" onclick="openCadVeiculo()"><i class="ti ti-plus"></i> Novo Veículo</button>`;
+  if (page === 'oficinas' && S.user?.perfil === 'Administrativo') act.innerHTML = `<button class="btn btn-p btn-sm" onclick="openCadOficina()"><i class="ti ti-plus"></i> Nova Oficina</button>`;
+  if (page === 'usuarios' && S.user?.perfil === 'Administrativo') act.innerHTML = `<button class="btn btn-p btn-sm" onclick="openCadUsuario()"><i class="ti ti-plus"></i> Novo Usuário</button>`;
+  const c = document.getElementById('content');
+  if (page === 'dashboard') c.innerHTML = pgDash();
+  else if (page === 'os-lista') c.innerHTML = pgOSL();
+  else if (page === 'relatorios') c.innerHTML = pgRel();
+  else if (page === 'veiculos') c.innerHTML = pgVeic();
+  else if (page === 'oficinas') c.innerHTML = pgOfic();
+  else if (page === 'usuarios') c.innerHTML = pgUsrs();
+}
+
+// ===================== PÁGINAS =====================
+function pgDash() {
+  const ab = S.os.filter(o => !o.cancelada && o.status !== 'concluida').length;
+  const co = S.os.filter(o => o.status === 'concluida').length;
+  const ca = S.os.filter(o => o.cancelada).length;
+  const gt = S.os.filter(o => o.status === 'concluida').reduce((a,b) => a + (b.valor||0), 0);
+  const at = osAtrasadas();
+
+  let alertHtml = '';
+  if (at.length) {
+    const items = at.map(os => {
+      const v = getV(os); const d = diasParados(os);
+      const cor = d >= 20 ? '#7f1d1d' : d >= 15 ? '#b91c1c' : '#c0392b';
+      return `<div class="alert-item">
+        <span class="alert-os">${os.numero}</span>
+        <div class="alert-info">
+          <div class="alert-frota">Frota ${v?.frota} — ${v?.tipo}</div>
+          <div class="alert-etapa-txt">Etapa ${os.etapa_atual}/6: ${ENAMES[os.etapa_atual-1]}</div>
+        </div>
+        <span class="alert-dias-pill" style="background:${d>=15?'#fecaca':'#fee2e2'};color:${cor}"><i class="ti ti-clock" style="font-size:10px"></i> ${d} dias</span>
+      </div>`;
+    }).join('');
+    alertHtml = `
+      <div class="alert-bar" onclick="toggleAlerta()">
+        <i class="ti ti-alert-triangle alert-bar-icon"></i>
+        <span class="alert-bar-text">OS com atraso <span class="alert-bar-sub">— paradas há mais de ${LIMITE_DIAS} dias na mesma etapa</span></span>
+        <span class="alert-bar-badge">${at.length}</span>
+        <span class="alert-bar-toggle"><i class="ti ti-chevron-down" id="alert-chevron"></i> ver</span>
+      </div>
+      <div class="alert-list" id="alert-list">${items}</div>`;
+  }
+
+  const rows = S.os.slice().reverse().slice(0,5).map(os => {
+    const v = getV(os);
+    const of = os.seguradora ? '<span class="badge b-gold" style="font-size:10px;">Seguradora</span>' : getOf(os);
+    return `<tr><td><span style="font-weight:700;color:#1a4f8a;cursor:pointer" onclick="pgOSD('${os.id}')">${os.numero}</span></td><td><strong>${v?.frota||'—'}</strong></td><td>${v?.tipo||'—'}</td><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#888">${os.problema}</td><td style="font-size:12px">${of}</td><td>${sbadge(os)}</td><td><button class="btn btn-xs" onclick="pgOSD('${os.id}')"><i class="ti ti-eye"></i></button></td></tr>`;
+  }).join('');
+
+  return `<div class="metrics">
+    <div class="metric" style="border-top:3px solid #1a4f8a"><div class="metric-lbl">Em andamento</div><div class="metric-val">${ab}</div><div class="metric-sub">OS abertas</div></div>
+    <div class="metric" style="border-top:3px solid #065f46"><div class="metric-lbl">Concluídas</div><div class="metric-val">${co}</div><div class="metric-sub">este ano</div></div>
+    <div class="metric" style="border-top:3px solid #c0392b"><div class="metric-lbl">Canceladas</div><div class="metric-val">${ca}</div><div class="metric-sub">este ano</div></div>
+    <div class="metric" style="border-top:3px solid #c8972a"><div class="metric-lbl">Gasto total</div><div class="metric-val" style="font-size:20px">R$ ${gt.toLocaleString('pt-BR')}</div><div class="metric-sub">OS concluídas</div></div>
+  </div>
+  ${alertHtml}
+  <div class="card"><div class="card-title"><i class="ti ti-clock"></i> OS recentes</div>
+    <table><thead><tr><th>Nº OS</th><th>Frota</th><th>Tipo</th><th>Problema</th><th>Oficina</th><th>Status</th><th></th></tr></thead>
+    <tbody>${rows||'<tr><td colspan="7" style="text-align:center;color:#aaa;padding:24px;">Nenhuma OS cadastrada ainda</td></tr>'}</tbody></table></div>`;
+}
+
+function pgOSL() {
+  const at = osAtrasadas();
+  const barraOS = at.length ? `<div class="alert-bar" style="margin-bottom:12px;cursor:default;">
+    <i class="ti ti-alert-triangle alert-bar-icon"></i>
+    <span class="alert-bar-text">${at.length} OS com atraso <span class="alert-bar-sub">— paradas há mais de ${LIMITE_DIAS} dias</span></span>
+    <span class="alert-bar-badge">${at.length}</span>
+  </div>` : '';
+
+  const rows = S.os.map(os => {
+    const v = getV(os); const d = diasParados(os);
+    const of = os.seguradora ? '<span class="badge b-gold" style="font-size:10px;">Seguradora</span>' : getOf(os);
+    const st = os.cancelada ? 'canceladas' : os.status === 'concluida' ? 'concluidas' : d >= LIMITE_DIAS ? 'atrasadas' : 'abertas';
+    return `<tr data-st="${st}">
+      <td><span style="font-weight:700;color:#1a4f8a;cursor:pointer" onclick="pgOSD('${os.id}')">${os.numero}</span></td>
+      <td><strong>${v?.frota||'—'}</strong></td>
+      <td>${v?.tipo||'—'}<br><span style="font-size:11px;color:#888">${v?.placa||''}</span></td>
+      <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#888">${os.problema}</td>
+      <td style="font-size:12px">${of}</td>
+      <td>${os.valor ? `<strong>R$ ${os.valor.toLocaleString('pt-BR')}</strong>` : '<span style="color:#aaa">—</span>'}</td>
+      <td>${sbadge(os)}</td>
+      <td><button class="btn btn-xs" onclick="pgOSD('${os.id}')"><i class="ti ti-eye"></i> Ver</button></td>
+    </tr>`;
+  }).join('');
+
+  return `${barraOS}
+  <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center;">
+    <select class="fs" style="width:auto;font-size:12px;" onchange="filterOS(this.value)">
+      <option value="todas">Todas as OS</option><option value="abertas">Em andamento</option>
+      <option value="concluidas">Concluídas</option><option value="canceladas">Canceladas</option>
+      <option value="atrasadas">⚠️ Com atraso</option>
+    </select>
+    <span style="font-size:12px;color:#888">${S.os.length} registros</span>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden;">
+    <table><thead><tr><th>Nº OS</th><th>Frota</th><th>Veículo</th><th>Problema</th><th>Oficina</th><th>Valor</th><th>Status</th><th></th></tr></thead>
+    <tbody id="os-tbody">${rows||'<tr><td colspan="8" style="text-align:center;color:#aaa;padding:24px;">Nenhuma OS cadastrada</td></tr>'}</tbody></table></div>`;
+}
+
+function filterOS(v) {
+  document.querySelectorAll('#os-tbody tr').forEach(tr => {
+    const st = tr.dataset.st;
+    tr.style.display = (v==='todas'||(v==='abertas'&&(st==='abertas'||st==='atrasadas'))||st===v) ? '' : 'none';
+  });
+}
+
+function pgOSD(id) {
+  const os = S.os.find(x => x.id === id); if (!os) return;
+  const v = getV(os);
+  const of = os.seguradora ? `Seguradora — ${os.prestador}` : S.oficinas.find(x => x.id === os.oficina_id)?.nome;
+  const isAdm = S.user?.perfil === 'Administrativo';
+  document.getElementById('tb-title').textContent = os.numero;
+  const cBtn = isAdm && !os.cancelada && os.status !== 'concluida' ? `<button class="btn btn-d btn-sm" onclick="cancelarOS('${id}')"><i class="ti ti-x"></i> Cancelar OS</button>` : '';
+  document.getElementById('tb-acts').innerHTML = `<button class="btn btn-sm" onclick="nav('os-lista')"><i class="ti ti-arrow-left"></i> Voltar</button>${cBtn}`;
+
+  const steps = os.etapas.map((e,i) => {
+    const done = e.data !== null, isAct = os.etapa_atual === e.n && !os.cancelada, isLock = ADM_ONLY.includes(e.n) && !isAdm;
+    let dc = done ? 'dot-done' : isAct ? 'dot-active' : 'dot-pend';
+    let icon = done ? '<i class="ti ti-check" style="font-size:12px"></i>' : e.n;
+    let act = '';
+    if (isAct && !os.cancelada) {
+      if (isLock) act = `<div style="font-size:12px;color:#888;display:flex;align-items:center;gap:4px;margin-top:8px;"><i class="ti ti-lock" style="font-size:13px"></i> Apenas Administrativo pode registrar esta etapa</div>`;
+      else {
+        let flds = '';
+        if (e.n===2) flds = `<div class="fg" style="margin-bottom:8px;"><label class="fl">Valor do orçamento (R$)</label><input class="fi" id="sv" type="number" placeholder="0,00" style="max-width:180px;"/></div>`;
+        if (e.n===4) flds = `<div class="frow" style="margin-bottom:8px;"><div><label class="fl">Nº do empenho</label><input class="fi" id="sen" placeholder="2025/0000"/></div><div><label class="fl">Data do empenho</label><input class="fi" type="date" id="sed"/></div></div>`;
+        if (e.n===6) flds = `<div class="frow" style="margin-bottom:8px;"><div><label class="fl">Nº da nota fiscal</label><input class="fi" id="snfn" placeholder="00000"/></div><div><label class="fl">Data da NF</label><input class="fi" type="date" id="snfd"/></div></div>`;
+        act = `<div class="step-act">${flds}<button class="btn btn-p btn-sm" onclick="avancarEtapa('${id}',${e.n})"><i class="ti ti-check"></i> Registrar etapa</button></div>`;
+      }
+    }
+    return `<div class="step"><div class="step-line"><div class="step-dot ${dc}">${icon}</div>${i<5?'<div class="step-conn"></div>':''}</div>
+      <div class="step-body"><div class="step-title">${e.nome}</div>
+      ${done ? `<div class="step-meta">${e.data} — ${e.usuario}${e.obs?' · <em>'+e.obs+'</em>':''}</div>` : `<div class="step-meta">${isAct&&!os.cancelada?'Aguardando registro':'Pendente'}</div>`}
+      ${act}</div></div>`;
+  }).join('');
+
+  const prog = os.cancelada ? 100 : Math.round(Math.min((os.etapa_atual-1)/6*100, 100));
+  document.getElementById('content').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 290px;gap:18px;">
+      <div>
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-title"><i class="ti ti-info-circle"></i> Dados da OS</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:16px;">
+            <div class="irow"><span class="ilbl">Veículo</span><span class="ival">${v?.tipo||'—'}</span><span style="font-size:12px;color:#888">${v?.placa||''} · ${v?.modelo||''}</span></div>
+            <div class="irow"><span class="ilbl">Frota</span><span class="ival">${v?.frota||'—'}</span></div>
+            <div class="irow"><span class="ilbl">Oficina</span><span class="ival" style="font-size:12px">${of||'—'}</span>${os.seguradora?'<span class="badge b-gold" style="margin-top:5px;font-size:10px;">Seguradora</span>':''}</div>
+          </div>
+          <div class="irow"><span class="ilbl">Problema relatado</span><span class="ival">${os.problema}</span></div>
+          ${os.valor ? `<div class="irow" style="margin-top:14px;"><span class="ilbl">Valor aprovado</span><span style="font-size:22px;font-weight:700;color:#1a4f8a">R$ ${os.valor.toLocaleString('pt-BR')}</span></div>` : ''}
+          ${os.cancelada ? `<div style="margin-top:14px;padding:12px 16px;background:#fee2e2;border-radius:8px;font-size:13px;color:#991b1b;border-left:3px solid #c0392b"><strong>OS Cancelada</strong>${os.motivo_cancel?' — '+os.motivo_cancel:''}</div>` : ''}
+        </div>
+        <div class="card"><div class="card-title"><i class="ti ti-list-check"></i> Fluxo de etapas</div><div class="stepper">${steps}</div></div>
+      </div>
+      <div><div class="card">
+        <div class="card-title"><i class="ti ti-activity"></i> Situação</div>
+        <div style="margin-bottom:14px;">${sbadge(os)}</div>
+        <div style="font-size:11px;color:#888;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em;">Progresso</div>
+        <div style="background:#f0f0f0;border-radius:99px;height:8px;overflow:hidden;margin-bottom:10px;">
+          <div style="height:100%;border-radius:99px;width:${prog}%;background:${os.cancelada?'#c0392b':'#1a4f8a'};"></div>
+        </div>
+        <div style="font-size:12px;color:#888;margin-bottom:16px;">${prog}% concluído</div>
+        <div style="padding-top:16px;border-top:1px solid #f0f0f0;">
+          <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">Veículo</div>
+          <div style="font-size:13px;font-weight:700">${v?.tipo||'—'} — Frota ${v?.frota||'—'}</div>
+          <div style="font-size:12px;color:#888">${v?.placa||''}</div>
+        </div>
+      </div></div>
+    </div>`;
+}
+
+async function avancarEtapa(osId, n) {
+  const os = S.os.find(x => x.id === osId); if (!os) return;
+  const etapas = [...os.etapas];
+  const etapa = {...etapas[n-1]};
+  const hoje = new Date().toLocaleDateString('pt-BR');
+  const hojeISO = new Date().toISOString().split('T')[0];
+  let obs = '';
+  if (n===2) { const val = document.getElementById('sv')?.value; if (!val) { alert('Informe o valor.'); return; } obs = `Orçamento: R$ ${parseFloat(val).toLocaleString('pt-BR')}`; etapa.valor = parseFloat(val); }
+  if (n===4) { const en = document.getElementById('sen')?.value, ed = document.getElementById('sed')?.value; if (!en||!ed) { alert('Informe nº e data do empenho.'); return; } obs = `Empenho nº ${en}, dt: ${new Date(ed+'T00:00:00').toLocaleDateString('pt-BR')}`; }
+  if (n===6) { const nfn = document.getElementById('snfn')?.value, nfd = document.getElementById('snfd')?.value; if (!nfn||!nfd) { alert('Informe nº e data da NF.'); return; } obs = `NF ${nfn}, dt: ${new Date(nfd+'T00:00:00').toLocaleDateString('pt-BR')}`; }
+  etapa.data = hoje; etapa.usuario = S.user.nome; etapa.obs = obs;
+  etapas[n-1] = etapa;
+  const novoStatus = n === 6 ? 'concluida' : 'em_andamento';
+  const updates = { etapas, etapa_atual: n+1, ultima_etapa_data: hojeISO, status: novoStatus };
+  if (n===2) updates.valor = etapa.valor;
+  await fbUpdate('os', osId, updates);
+  Object.assign(os, updates);
+  atualizarBadges();
+  toast('Etapa registrada com sucesso!');
+  pgOSD(osId);
+}
+
+async function cancelarOS(id) {
+  const os = S.os.find(x => x.id === id); if (!os) return;
+  const m = prompt('Motivo do cancelamento (opcional):'); if (m === null) return;
+  await fbUpdate('os', id, { cancelada: true, status: 'cancelada', motivo_cancel: m });
+  os.cancelada = true; os.status = 'cancelada'; os.motivo_cancel = m;
+  atualizarBadges();
+  toast('OS cancelada.');
+  pgOSD(id);
+}
+
+function pgRel() {
+  const ofOpts = S.oficinas.map(o => `<option value="${o.id}">${o.nome}</option>`).join('');
+  const vOpts = S.veiculos.map(v => `<option value="${v.id}">${v.frota} — ${v.tipo} (${v.placa})</option>`).join('');
+  return `<div class="card" style="margin-bottom:16px;">
+    <div class="card-title"><i class="ti ti-filter"></i> Filtros</div>
+    <div class="filtros">
+      <div class="fg" style="margin-bottom:0"><label class="fl">Data início</label><input class="fi" type="date" id="f-dt-ini"/></div>
+      <div class="fg" style="margin-bottom:0"><label class="fl">Data fim</label><input class="fi" type="date" id="f-dt-fim"/></div>
+      <div class="fg" style="margin-bottom:0"><label class="fl">Oficina</label><select class="fs" id="f-of"><option value="">Todas</option><option value="seg">Seguradora</option>${ofOpts}</select></div>
+      <div class="fg" style="margin-bottom:0"><label class="fl">Status</label><select class="fs" id="f-st"><option value="">Todos</option><option value="em_andamento">Em andamento</option><option value="concluida">Concluída</option><option value="cancelada">Cancelada</option></select></div>
+      <div style="display:flex;gap:6px;align-items:flex-end;">
+        <button class="btn btn-p btn-sm" onclick="aplicarFiltros()"><i class="ti ti-search"></i> Filtrar</button>
+        <button class="btn btn-clr btn-sm" onclick="limparFiltros()"><i class="ti ti-x"></i></button>
+      </div>
+    </div>
+    <div style="margin-top:12px;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.04em;">Veículo:</span>
+      <select class="fs" id="f-v" style="width:auto;min-width:220px;font-size:12px;"><option value="">Todos</option>${vOpts}</select>
+    </div>
+    <div id="tags-filtro" style="margin-top:10px;display:none;"></div>
+  </div>
+  <div id="rel-resultados"></div>`;
+}
+
+function aplicarFiltros() {
+  const dtIni = document.getElementById('f-dt-ini')?.value;
+  const dtFim = document.getElementById('f-dt-fim')?.value;
+  const ofId = document.getElementById('f-of')?.value;
+  const status = document.getElementById('f-st')?.value;
+  const veicId = document.getElementById('f-v')?.value;
+  let lista = S.os.filter(os => {
+    const dtOS = os.ultima_etapa_data;
+    if (dtIni && dtOS && dtOS < dtIni) return false;
+    if (dtFim && dtOS && dtOS > dtFim) return false;
+    if (ofId === 'seg' && !os.seguradora) return false;
+    if (ofId && ofId !== 'seg' && os.oficina_id !== ofId) return false;
+    if (status === 'cancelada' && !os.cancelada) return false;
+    if (status === 'concluida' && os.status !== 'concluida') return false;
+    if (status === 'em_andamento' && (os.cancelada || os.status === 'concluida')) return false;
+    if (veicId && os.veiculo_id !== veicId) return false;
+    return true;
+  });
+  const tags = [];
+  if (dtIni||dtFim) tags.push(`Período: ${dtIni?dtIni.split('-').reverse().join('/'):'início'} até ${dtFim?dtFim.split('-').reverse().join('/'):'hoje'}`);
+  if (ofId) tags.push(`Oficina: ${ofId==='seg'?'Seguradora':S.oficinas.find(x=>x.id===ofId)?.nome}`);
+  if (status) tags.push(`Status: ${status==='em_andamento'?'Em andamento':status==='concluida'?'Concluída':'Cancelada'}`);
+  if (veicId) { const v = S.veiculos.find(x=>x.id===veicId); tags.push(`Veículo: Frota ${v?.frota}`); }
+  const tDiv = document.getElementById('tags-filtro');
+  if (tDiv) { if (tags.length) { tDiv.style.display='block'; tDiv.innerHTML=tags.map(t=>`<span class="tag-filtro"><i class="ti ti-filter" style="font-size:10px"></i> ${t}</span>`).join(''); } else tDiv.style.display='none'; }
+  renderRelResultados(lista);
+}
+
+function limparFiltros() {
+  ['f-dt-ini','f-dt-fim','f-of','f-st','f-v'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const tDiv = document.getElementById('tags-filtro'); if (tDiv) tDiv.style.display = 'none';
+  aplicarFiltros();
+}
+
+function renderRelResultados(lista) {
+  const div = document.getElementById('rel-resultados'); if (!div) return;
+  if (!lista.length) { div.innerHTML = `<div class="card"><div style="text-align:center;padding:32px;color:#aaa;font-size:13px;">Nenhuma OS encontrada com os filtros selecionados.</div></div>`; return; }
+  const total = lista.reduce((a,b) => a+(b.valor||0), 0);
+  const co = lista.filter(o=>o.status==='concluida').length;
+  const ca = lista.filter(o=>o.cancelada).length;
+  const gof = {}; lista.filter(o=>o.valor).forEach(o=>{const k=getOf(o);gof[k]=(gof[k]||0)+o.valor;});
+  const maxof = Math.max(...Object.values(gof),1);
+  const gv = {}; lista.filter(o=>o.valor).forEach(o=>{const v=getV(o);const k=`${v?.frota} — ${v?.tipo}`;gv[k]=(gv[k]||0)+o.valor;});
+  const maxv = Math.max(...Object.values(gv),1);
+  const rows = lista.map(os=>{const v=getV(os);const of=os.seguradora?'Seguradora':S.oficinas.find(x=>x.id===os.oficina_id)?.nome||'—';return `<tr><td style="font-weight:700;color:#1a4f8a">${os.numero}</td><td>${v?.frota||'—'}</td><td>${v?.tipo||'—'}</td><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#888">${os.problema}</td><td style="font-size:12px">${of}</td><td>${os.valor?'R$ '+os.valor.toLocaleString('pt-BR'):'—'}</td><td>${sbadge(os)}</td></tr>`;}).join('');
+  div.innerHTML = `
+    <div class="metrics" style="grid-template-columns:repeat(4,1fr);">
+      <div class="metric" style="border-top:3px solid #1a4f8a"><div class="metric-lbl">OS encontradas</div><div class="metric-val">${lista.length}</div></div>
+      <div class="metric" style="border-top:3px solid #c8972a"><div class="metric-lbl">Gasto total</div><div class="metric-val" style="font-size:20px">R$ ${total.toLocaleString('pt-BR')}</div></div>
+      <div class="metric" style="border-top:3px solid #065f46"><div class="metric-lbl">Concluídas</div><div class="metric-val">${co}</div></div>
+      <div class="metric" style="border-top:3px solid #c0392b"><div class="metric-lbl">Canceladas</div><div class="metric-val">${ca}</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+      <div class="card"><div class="card-title"><i class="ti ti-tool"></i> Gasto por oficina</div>
+        ${Object.entries(gof).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="bar-row"><div class="bar-lbl" title="${k}">${k}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(v/maxof*100)}%"></div></div><div class="bar-val">R$ ${v.toLocaleString('pt-BR')}</div></div>`).join('')||'<span style="font-size:12px;color:#aaa">Sem dados</span>'}
+      </div>
+      <div class="card"><div class="card-title"><i class="ti ti-ambulance"></i> Gasto por veículo</div>
+        ${Object.entries(gv).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="bar-row"><div class="bar-lbl" title="${k}">${k}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(v/maxv*100)}%;background:#c8972a"></div></div><div class="bar-val">R$ ${v.toLocaleString('pt-BR')}</div></div>`).join('')||'<span style="font-size:12px;color:#aaa">Sem dados</span>'}
+      </div>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div style="padding:12px 18px;border-bottom:1px solid #eee;"><span style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;">Detalhamento — ${lista.length} OS</span></div>
+      <table><thead><tr><th>Nº OS</th><th>Frota</th><th>Tipo</th><th>Problema</th><th>Oficina</th><th>Valor</th><th>Status</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+    </div>`;
+}
+
+function pgVeic() {
+  const cards = S.veiculos.map(v => { const of = S.oficinas.find(x=>x.id===v.oficina_id)?.nome||'Não vinculada'; return `<div class="cc-card"><div class="cc-icon"><i class="ti ${imap[v.tipo]||'ti-car'}"></i></div><div class="cc-title">Frota ${v.frota} — ${v.tipo}</div><div class="cc-sub">${v.placa} · ${v.modelo}</div><div class="cc-tag"><i class="ti ti-tool" style="font-size:11px"></i> ${of}</div><div class="cc-acts"><button class="btn btn-xs" onclick="editVeic('${v.id}')"><i class="ti ti-edit"></i> Editar</button></div></div>`; }).join('');
+  return `<div class="sec-head"><h2>Veículos <span class="sec-cnt">(${S.veiculos.length})</span></h2></div><div class="cc-grid">${cards||'<span style="color:#aaa;font-size:13px;">Nenhum veículo cadastrado</span>'}</div>`;
+}
+function pgOfic() {
+  const cards = S.oficinas.map(o => `<div class="cc-card"><div class="cc-icon"><i class="ti ti-tool"></i></div><div class="cc-title">${o.nome}</div><div class="cc-sub">${o.tipo}</div><div class="cc-acts"><button class="btn btn-xs" onclick="editOfic('${o.id}')"><i class="ti ti-edit"></i> Editar</button></div></div>`).join('');
+  return `<div class="sec-head"><h2>Oficinas <span class="sec-cnt">(${S.oficinas.length})</span></h2></div><div class="cc-grid">${cards}</div>`;
+}
+function pgUsrs() {
+  const rows = S.usuarios.map(u => `<tr><td><div style="display:flex;align-items:center;gap:8px;"><div style="width:30px;height:30px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#1e40af;">${u.nome.split(' ').map(x=>x[0]).join('').slice(0,2)}</div>${u.nome}</div></td><td style="color:#888">${u.login}</td><td><span class="badge ${u.perfil==='Administrativo'?'b-blue':'b-gray'}">${u.perfil}</span></td><td><span class="badge ${u.ativo?'b-green':'b-red'}">${u.ativo?'Ativo':'Inativo'}</span></td><td><button class="btn btn-xs" onclick="editUser('${u.id}')"><i class="ti ti-edit"></i> Editar</button></td></tr>`).join('');
+  return `<div class="sec-head"><h2>Usuários <span class="sec-cnt">(${S.usuarios.length})</span></h2></div>
+  <div class="card" style="padding:0;overflow:hidden;"><table><thead><tr><th>Nome</th><th>Login</th><th>Perfil</th><th>Status</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+// ===================== MODAIS =====================
+function modal(title, body, btns) {
+  document.getElementById('mwrap').innerHTML = `<div class="mover" onclick="if(event.target===this)closeM()"><div class="modal"><div class="mhead"><h2>${title}</h2><button class="mbtn-close" onclick="closeM()">✕</button></div><div class="mbody">${body}</div><div class="mfoot">${btns.map(b=>`<button class="btn ${b.p?'btn-p':''}" onclick="${b.fn}">${b.l}</button>`).join('')}</div></div></div>`;
+}
+function closeM() { document.getElementById('mwrap').innerHTML = ''; segOn = false; }
+
+let segOn = false;
+function openNovaOS() {
+  const vo = S.veiculos.map(v=>`<option value="${v.id}">${v.frota} — ${v.tipo} (${v.placa})</option>`).join('');
+  modal('Nova Ordem de Serviço', `
+    <div class="fg"><label class="fl">Veículo / Frota</label><select class="fs" id="nv" onchange="loadOf()">${vo}</select></div>
+    <div id="nvi" style="display:none;padding:10px 13px;background:#dbeafe;border-radius:8px;font-size:12px;color:#1e40af;margin-bottom:12px;"></div>
+    <div class="fg"><label class="fl">Oficina vinculada</label><input class="fi" id="nod" readonly style="background:#f5f5f5;color:#888;"/></div>
+    <button class="tseg" id="nsb" onclick="toggleSeg()"><div class="ticon" id="nsi"></div> Acionar Seguradora</button>
+    <div id="nsf" style="display:none;margin-top:12px;"><div class="fg"><label class="fl">Prestador da Seguradora</label><input class="fi" id="nsp" placeholder="Nome da oficina autorizada"/></div></div>
+    <div class="fg" style="margin-top:14px;"><label class="fl">Descrição do problema</label><textarea class="fi" id="npr" rows="3" style="resize:vertical;" placeholder="Descreva o problema principal..."></textarea></div>`,
+  [{l:'Cancelar',fn:'closeM()'},{l:'Criar OS',p:true,fn:'criarOS()'}]);
+  setTimeout(loadOf, 50);
+}
+function toggleSeg() { segOn=!segOn; document.getElementById('nsb').classList.toggle('on',segOn); document.getElementById('nsi').classList.toggle('on',segOn); document.getElementById('nsf').style.display=segOn?'block':'none'; if(segOn) document.getElementById('nod').value='— Seguradora —'; else loadOf(); }
+function loadOf() { const v=S.veiculos.find(x=>x.id===document.getElementById('nv')?.value); if(!v)return; const i=document.getElementById('nvi'); if(i){i.style.display='block';i.textContent=`Placa: ${v.placa} · ${v.modelo}`;} if(!segOn){const o=S.oficinas.find(x=>x.id===v.oficina_id); document.getElementById('nod').value=o?.nome||'Não vinculada';} }
+
+async function criarOS() {
+  const vid = document.getElementById('nv').value;
+  const prob = document.getElementById('npr').value.trim();
+  if (!prob) { alert('Descreva o problema.'); return; }
+  const v = S.veiculos.find(x => x.id === vid);
+  const hojeISO = new Date().toISOString().split('T')[0];
+  const novaOS = {
+    numero: gerarNumOS(),
+    veiculo_id: vid,
+    oficina_id: segOn ? null : (v?.oficina_id || null),
+    seguradora: segOn,
+    prestador: segOn ? (document.getElementById('nsp').value||'') : '',
+    problema: prob,
+    valor: null,
+    status: 'em_andamento',
+    etapa_atual: 1,
+    cancelada: false,
+    ultima_etapa_data: hojeISO,
+    etapas: ENAMES.map((nome,i) => ({n:i+1, nome, data:null, usuario:null, obs:'', valor:null}))
+  };
+  const newId = await fbAdd('os', novaOS);
+  novaOS.id = newId;
+  S.os.push(novaOS);
+  segOn = false;
+  closeM();
+  atualizarBadges();
+  toast('OS criada com sucesso!');
+  nav('os-lista');
+}
+
+function openCadVeiculo() {
+  const oo = S.oficinas.map(o=>`<option value="${o.id}">${o.nome}</option>`).join('');
+  modal('Novo Veículo', `<div class="frow"><div class="fg"><label class="fl">Nº da Frota</label><input class="fi" id="cvf" placeholder="001"/></div><div class="fg"><label class="fl">Tipo</label><select class="fs" id="cvt"><option>Ambulância</option><option>Van</option><option>Van Cadeirante</option><option>Ônibus</option><option>Carro Passeio</option><option>Administrativo</option></select></div></div><div class="frow"><div class="fg"><label class="fl">Placa</label><input class="fi" id="cvp" placeholder="ABC-1234"/></div><div class="fg"><label class="fl">Modelo / Ano</label><input class="fi" id="cvm" placeholder="Fiat Ducato 2022"/></div></div><div class="fg"><label class="fl">Oficina vinculada</label><select class="fs" id="cvo"><option value="">Selecione...</option>${oo}</select></div>`,
+  [{l:'Cancelar',fn:'closeM()'},{l:'Salvar',p:true,fn:'salvarVeic()'}]);
+}
+async function salvarVeic() {
+  const f=document.getElementById('cvf').value.trim(),t=document.getElementById('cvt').value,p=document.getElementById('cvp').value.trim(),m=document.getElementById('cvm').value.trim(),o=document.getElementById('cvo').value;
+  if(!f||!p||!m){alert('Preencha todos os campos.');return;}
+  const newId = await fbAdd('veiculos',{frota:f,tipo:t,placa:p,modelo:m,oficina_id:o});
+  S.veiculos.push({id:newId,frota:f,tipo:t,placa:p,modelo:m,oficina_id:o});
+  closeM(); toast('Veículo cadastrado!'); nav('veiculos');
+}
+function editVeic(id) {
+  const v=S.veiculos.find(x=>x.id===id);
+  const oo=S.oficinas.map(o=>`<option value="${o.id}" ${o.id===v.oficina_id?'selected':''}>${o.nome}</option>`).join('');
+  modal('Editar Veículo',`<div class="frow"><div class="fg"><label class="fl">Nº da Frota</label><input class="fi" id="evf" value="${v.frota}"/></div><div class="fg"><label class="fl">Tipo</label><select class="fs" id="evt"><option ${v.tipo==='Ambulância'?'selected':''}>Ambulância</option><option ${v.tipo==='Van'?'selected':''}>Van</option><option ${v.tipo==='Van Cadeirante'?'selected':''}>Van Cadeirante</option><option ${v.tipo==='Ônibus'?'selected':''}>Ônibus</option><option ${v.tipo==='Carro Passeio'?'selected':''}>Carro Passeio</option><option ${v.tipo==='Administrativo'?'selected':''}>Administrativo</option></select></div></div><div class="frow"><div class="fg"><label class="fl">Placa</label><input class="fi" id="evp" value="${v.placa}"/></div><div class="fg"><label class="fl">Modelo</label><input class="fi" id="evm" value="${v.modelo}"/></div></div><div class="fg"><label class="fl">Oficina vinculada</label><select class="fs" id="evo"><option value="">Selecione...</option>${oo}</select></div>`,
+  [{l:'Cancelar',fn:'closeM()'},{l:'Salvar',p:true,fn:`saveEV('${id}')`}]);
+}
+async function saveEV(id) {
+  const f=document.getElementById('evf').value.trim(),t=document.getElementById('evt').value,p=document.getElementById('evp').value.trim(),m=document.getElementById('evm').value.trim(),o=document.getElementById('evo').value;
+  await fbUpdate('veiculos',id,{frota:f,tipo:t,placa:p,modelo:m,oficina_id:o});
+  const v=S.veiculos.find(x=>x.id===id); Object.assign(v,{frota:f,tipo:t,placa:p,modelo:m,oficina_id:o});
+  closeM(); toast('Veículo atualizado!'); nav('veiculos');
+}
+function openCadOficina() { modal('Nova Oficina',`<div class="fg"><label class="fl">Nome da oficina</label><input class="fi" id="con"/></div><div class="fg"><label class="fl">Especialidade</label><input class="fi" id="cot" placeholder="Ex: Mecânica Geral"/></div>`,[{l:'Cancelar',fn:'closeM()'},{l:'Salvar',p:true,fn:'salvarOfic()'}]); }
+async function salvarOfic() {
+  const n=document.getElementById('con').value.trim(),t=document.getElementById('cot').value.trim();
+  if(!n){alert('Informe o nome.');return;}
+  const newId=await fbAdd('oficinas',{nome:n,tipo:t});
+  S.oficinas.push({id:newId,nome:n,tipo:t});
+  closeM(); toast('Oficina cadastrada!'); nav('oficinas');
+}
+function editOfic(id) { const o=S.oficinas.find(x=>x.id===id); modal('Editar Oficina',`<div class="fg"><label class="fl">Nome</label><input class="fi" id="eon" value="${o.nome}"/></div><div class="fg"><label class="fl">Especialidade</label><input class="fi" id="eot" value="${o.tipo}"/></div>`,[{l:'Cancelar',fn:'closeM()'},{l:'Salvar',p:true,fn:`saveEO('${id}')`}]); }
+async function saveEO(id) { const o=S.oficinas.find(x=>x.id===id); const n=document.getElementById('eon').value.trim(),t=document.getElementById('eot').value.trim(); await fbUpdate('oficinas',id,{nome:n,tipo:t}); o.nome=n;o.tipo=t; closeM(); toast('Oficina atualizada!'); nav('oficinas'); }
+function openCadUsuario() { modal('Novo Usuário',`<div class="fg"><label class="fl">Nome completo</label><input class="fi" id="cun"/></div><div class="frow"><div class="fg"><label class="fl">Login</label><input class="fi" id="cul"/></div><div class="fg"><label class="fl">Senha</label><input class="fi" type="password" id="cus"/></div></div><div class="fg"><label class="fl">Perfil</label><select class="fs" id="cup"><option>Administrativo</option><option>Logística</option></select></div>`,[{l:'Cancelar',fn:'closeM()'},{l:'Salvar',p:true,fn:'salvarUser()'}]); }
+async function salvarUser() {
+  const n=document.getElementById('cun').value.trim(),l=document.getElementById('cul').value.trim(),s=document.getElementById('cus').value.trim(),p=document.getElementById('cup').value;
+  if(!n||!l||!s){alert('Preencha todos os campos.');return;}
+  if(S.usuarios.find(x=>x.login===l)){alert('Este login já existe.');return;}
+  const newId=await fbAdd('usuarios',{nome:n,login:l,senha:s,perfil:p,ativo:true});
+  S.usuarios.push({id:newId,nome:n,login:l,senha:s,perfil:p,ativo:true});
+  closeM(); toast('Usuário cadastrado!'); nav('usuarios');
+}
+function editUser(id) {
+  const u=S.usuarios.find(x=>x.id===id);
+  modal('Editar Usuário',`<div class="fg"><label class="fl">Nome</label><input class="fi" id="eun" value="${u.nome}"/></div><div class="frow"><div class="fg"><label class="fl">Login</label><input class="fi" id="eul" value="${u.login}"/></div><div class="fg"><label class="fl">Nova senha</label><input class="fi" type="password" id="eus" placeholder="(manter atual)"/></div></div><div class="fg"><label class="fl">Perfil</label><select class="fs" id="eup"><option ${u.perfil==='Administrativo'?'selected':''}>Administrativo</option><option ${u.perfil==='Logística'?'selected':''}>Logística</option></select></div><div class="fg"><label class="fl">Status</label><select class="fs" id="eua"><option value="1" ${u.ativo?'selected':''}>Ativo</option><option value="0" ${!u.ativo?'selected':''}>Inativo</option></select></div>`,
+  [{l:'Cancelar',fn:'closeM()'},{l:'Salvar',p:true,fn:`saveEU('${id}')`}]);
+}
+async function saveEU(id) {
+  const u=S.usuarios.find(x=>x.id===id);
+  const n=document.getElementById('eun').value.trim(),l=document.getElementById('eul').value.trim(),s=document.getElementById('eus').value.trim(),p=document.getElementById('eup').value,a=document.getElementById('eua').value==='1';
+  const upd={nome:n,login:l,perfil:p,ativo:a}; if(s) upd.senha=s;
+  await fbUpdate('usuarios',id,upd); Object.assign(u,upd);
+  closeM(); toast('Usuário atualizado!'); nav('usuarios');
+}
+
+function toggleAlerta() {
+  const el=document.getElementById('alert-list'); const ic=document.getElementById('alert-chevron');
+  if(!el)return; const open=el.classList.toggle('open'); ic.className=open?'ti ti-chevron-up':'ti ti-chevron-down';
+}
+
+// Expor funções globais
+window.doLogin=doLogin; window.doLogout=doLogout; window.nav=nav;
+window.openNovaOS=openNovaOS; window.criarOS=criarOS; window.toggleSeg=toggleSeg; window.loadOf=loadOf;
+window.pgOSD=pgOSD; window.avancarEtapa=avancarEtapa; window.cancelarOS=cancelarOS;
+window.filterOS=filterOS; window.toggleAlerta=toggleAlerta;
+window.aplicarFiltros=aplicarFiltros; window.limparFiltros=limparFiltros;
+window.openCadVeiculo=openCadVeiculo; window.salvarVeic=salvarVeic; window.editVeic=editVeic; window.saveEV=saveEV;
+window.openCadOficina=openCadOficina; window.salvarOfic=salvarOfic; window.editOfic=editOfic; window.saveEO=saveEO;
+window.openCadUs
