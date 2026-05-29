@@ -882,4 +882,32 @@ window.filterOS=filterOS; window.toggleAlerta=toggleAlerta;
 window.aplicarFiltros=aplicarFiltros; window.limparFiltros=limparFiltros;
 window.openCadVeiculo=openCadVeiculo; window.salvarVeic=salvarVeic; window.editVeic=editVeic; window.saveEV=saveEV;
 window.openCadOficina=openCadOficina; window.salvarOfic=salvarOfic; window.editOfic=editOfic; window.saveEO=saveEO;
-window.openCadUs
+
+window.openCadUsuario=openCadUsuario; window.salvarUser=salvarUser; window.editUser=editUser; window.saveEU=saveEU;
+window.closeM=closeM;
+
+// ===================== INICIALIZAÇÃO =====================
+(async () => {
+  try {
+    await initDados();
+    await carregarDados();
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('login-wrap').style.display = 'flex';
+  } catch(e) {
+    console.error('Erro Firebase:', e);
+    document.getElementById('loading-screen').querySelector('p').textContent = 'Erro ao conectar. Verifique a internet e tente novamente.';
+  }
+})();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(r => console.log('SW registrado'))
+      .catch(e => console.log('SW erro:', e));
+  });
+}
+</script>
+</body>
+</html>
