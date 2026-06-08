@@ -580,7 +580,8 @@ function pgOSD(id) {
         let flds = '';
         if (e.n===2) flds = `<div class="fg" style="margin-bottom:8px;"><label class="fl">Valor do orçamento (R$)</label><input class="fi" id="sv" type="number" placeholder="0,00" style="max-width:180px;"/></div>`;
         if (e.n===4) flds = `<div class="frow" style="margin-bottom:8px;"><div><label class="fl">Nº do empenho</label><input class="fi" id="sen" placeholder="2025/0000"/></div><div><label class="fl">Data do empenho</label><input class="fi" type="date" id="sed"/></div></div>`;
-        if (e.n===6) flds = `<div class="frow" style="margin-bottom:8px;"><div><label class="fl">Nº da nota fiscal</label><input class="fi" id="snfn" placeholder="00000"/></div><div><label class="fl">Data da NF</label><input class="fi" type="date" id="snfd"/></div></div>`;
+        if (e.n===1) flds = `<div class="fg" style="margin-bottom:8px;"><label class="fl">Data da solicitação do orçamento</label><input class="fi" type="date" id="sdt1"/></div>`;
+        if (e.n===6) flds = `<div class="frow" style="margin-bottom:8px;"><div><label class="fl">Nº NF Serviço</label><input class="fi" id="snfn" placeholder="00000"/></div><div><label class="fl">Data NF Serviço</label><input class="fi" type="date" id="snfd"/></div></div><div class="frow" style="margin-bottom:8px;"><div><label class="fl">Nº NF Materiais (opcional)</label><input class="fi" id="snfnm" placeholder="00000"/></div><div><label class="fl">Data NF Materiais</label><input class="fi" type="date" id="snfdm"/></div></div><div class="fg" style="margin-bottom:8px;"><label class="fl">Valor total R$</label><input class="fi" id="snfval" type="number" placeholder="0,00" style="max-width:180px;"/></div>`;
         act = `<div class="step-act">${flds}<button class="btn btn-p btn-sm" onclick="avancarEtapa('${id}',${e.n})"><i class="bi bi-check-lg"></i> Registrar etapa</button></div>`;
       }
     }
@@ -602,6 +603,7 @@ function pgOSD(id) {
             <div class="irow"><span class="ilbl">Oficina</span><span class="ival" style="font-size:12px">${of||'—'}</span>${os.seguradora?'<span class="badge b-gold" style="margin-top:5px;font-size:10px;">Seguradora</span>':''}</div>
           </div>
           <div class="irow"><span class="ilbl">Problema relatado</span><span class="ival">${os.problema}</span></div>
+          ${os.processo_1doc?`<div class="irow" style="margin-top:10px;"><span class="ilbl">Processo 1Doc</span><span class="ival" style="color:#1a4f8a">${os.processo_1doc}</span></div>`:''}
           ${os.valor ? `<div class="irow" style="margin-top:14px;"><span class="ilbl">Valor aprovado</span><span style="font-size:22px;font-weight:700;color:#1a4f8a">R$ ${os.valor.toLocaleString('pt-BR')}</span></div>` : ''}
           ${os.cancelada ? `<div style="margin-top:14px;padding:12px 16px;background:#fee2e2;border-radius:8px;font-size:13px;color:#991b1b;border-left:3px solid #c0392b"><strong>OS Cancelada</strong>${os.motivo_cancel?' — '+os.motivo_cancel:''}</div>` : ''}
         </div>
@@ -629,16 +631,27 @@ async function avancarEtapa(osId, n) {
   const etapas = [...os.etapas];
   const etapa = {...etapas[n-1]};
   const hoje = new Date().toLocaleDateString('pt-BR');
-  const hojeISO = new Date().toISOString().split('T')[0];
+  const hojeISO = new Date().toISOString().split('T')[0]; const proc1doc = document.getElementById('n1doc')?.value.trim()||'';
   let obs = '';
+  if (n===1) { const dt1 = document.getElementById('sdt1')?.value; if(dt1) obs = `Solicitado em: ${new Date(dt1+'T00:00:00').toLocaleDateString('pt-BR')}`; }
   if (n===2) { const val = document.getElementById('sv')?.value; if (!val) { alert('Informe o valor.'); return; } obs = `Orçamento: R$ ${parseFloat(val).toLocaleString('pt-BR')}`; etapa.valor = parseFloat(val); }
   if (n===4) { const en = document.getElementById('sen')?.value, ed = document.getElementById('sed')?.value; if (!en||!ed) { alert('Informe nº e data do empenho.'); return; } obs = `Empenho nº ${en}, dt: ${new Date(ed+'T00:00:00').toLocaleDateString('pt-BR')}`; }
-  if (n===6) { const nfn = document.getElementById('snfn')?.value, nfd = document.getElementById('snfd')?.value; if (!nfn||!nfd) { alert('Informe nº e data da NF.'); return; } obs = `NF ${nfn}, dt: ${new Date(nfd+'T00:00:00').toLocaleDateString('pt-BR')}`; }
+  if (n===6) { 
+    const nfn = document.getElementById('snfn')?.value, nfd = document.getElementById('snfd')?.value;
+    if (!nfn||!nfd) { alert('Informe nº e data da NF de serviço.'); return; }
+    const nfnm = document.getElementById('snfnm')?.value, nfdm = document.getElementById('snfdm')?.value;
+    const nfval = document.getElementById('snfval')?.value;
+    obs = `NF Serv: ${nfn} (${new Date(nfd+'T00:00:00').toLocaleDateString('pt-BR')})`;
+    if(nfnm) obs += ` | NF Mat: ${nfnm} (${new Date((nfdm||nfd)+'T00:00:00').toLocaleDateString('pt-BR')})`;
+    if(nfval) obs += ` | Total: R$ ${parseFloat(nfval).toLocaleString('pt-BR')}`;
+  }
   etapa.data = hoje; etapa.usuario = S.user.nome; etapa.obs = obs;
   etapas[n-1] = etapa;
   const novoStatus = n === 6 ? 'concluida' : 'em_andamento';
+  const nfval_final = n===6 ? document.getElementById('snfval')?.value : null;
   const updates = { etapas, etapa_atual: n+1, ultima_etapa_data: hojeISO, status: novoStatus };
   if (n===2) updates.valor = etapa.valor;
+  if (n===6 && nfval_final) updates.valor_nf = parseFloat(nfval_final);
   await fbUpdate('os', osId, updates);
   Object.assign(os, updates);
   atualizarBadges();
@@ -776,7 +789,8 @@ function openNovaOS() {
     <div class="fg"><label class="fl">Oficina vinculada</label><input class="fi" id="nod" readonly style="background:#f5f5f5;color:#888;"/></div>
     <button class="tseg" id="nsb" onclick="toggleSeg()"><div class="ticon" id="nsi"></div> Acionar Seguradora</button>
     <div id="nsf" style="display:none;margin-top:12px;"><div class="fg"><label class="fl">Prestador da Seguradora</label><input class="fi" id="nsp" placeholder="Nome da oficina autorizada"/></div></div>
-    <div class="fg" style="margin-top:14px;"><label class="fl">Descrição do problema</label><textarea class="fi" id="npr" rows="3" style="resize:vertical;" placeholder="Descreva o problema principal..."></textarea></div>`,
+    <div class="fg" style="margin-top:12px;"><label class="fl">Nº Processo 1Doc (opcional)</label><input class="fi" id="n1doc" placeholder="Ex: 12345/2025"/></div>
+    <div class="fg"><label class="fl">Descrição do problema</label><textarea class="fi" id="npr" rows="3" style="resize:vertical;" placeholder="Descreva o problema principal..."></textarea></div>`,
   [{l:'Cancelar',fn:'closeM()'},{l:'Criar OS',p:true,fn:'criarOS()'}]);
   setTimeout(loadOf, 50);
 }
@@ -788,13 +802,13 @@ async function criarOS() {
   const prob = document.getElementById('npr').value.trim();
   if (!prob) { alert('Descreva o problema.'); return; }
   const v = S.veiculos.find(x => x.id === vid);
-  const hojeISO = new Date().toISOString().split('T')[0];
+  const hojeISO = new Date().toISOString().split('T')[0]; const proc1doc = document.getElementById('n1doc')?.value.trim()||'';
   const novaOS = {
     numero: gerarNumOS(),
     veiculo_id: vid,
     oficina_id: segOn ? null : (v?.oficina_id || null),
     seguradora: segOn,
-    prestador: segOn ? (document.getElementById('nsp').value||'') : '',
+    prestador: segOn ? (document.getElementById('nsp').value||'') : '', processo_1doc: proc1doc,
     problema: prob,
     valor: null,
     status: 'em_andamento',
@@ -815,26 +829,38 @@ async function criarOS() {
 
 function openCadVeiculo() {
   const oo = S.oficinas.map(o=>`<option value="${o.id}">${o.nome}</option>`).join('');
-  modal('Novo Veículo', `<div class="frow"><div class="fg"><label class="fl">Nº da Frota</label><input class="fi" id="cvf" placeholder="001"/></div><div class="fg"><label class="fl">Tipo</label><select class="fs" id="cvt"><option>Ambulância</option><option>Van</option><option>Van Cadeirante</option><option>Ônibus</option><option>Carro Passeio</option><option>Administrativo</option></select></div></div><div class="frow"><div class="fg"><label class="fl">Placa</label><input class="fi" id="cvp" placeholder="ABC-1234"/></div><div class="fg"><label class="fl">Modelo / Ano</label><input class="fi" id="cvm" placeholder="Fiat Ducato 2022"/></div></div><div class="fg"><label class="fl">Oficina vinculada</label><select class="fs" id="cvo"><option value="">Selecione...</option>${oo}</select></div>`,
+  modal('Novo Veículo', `<div class="frow"><div class="fg"><label class="fl">Nº da Frota</label><input class="fi" id="cvf" placeholder="001"/></div><div class="fg"><label class="fl">Tipo</label><input class="fi" id="cvt" list="tipos-veiculo" placeholder="Ex: Ambulância, Ritinha..."/><datalist id="tipos-veiculo">
+  <option value="Ambulância"/>
+  <option value="Van"/>
+  <option value="Van Cadeirante"/>
+  <option value="Ônibus"/>
+  <option value="Carro Passeio"/>
+  <option value="Administrativo"/>
+  <option value="Caminhonete"/>
+  <option value="Carga"/>
+  <option value="Manutenção"/>
+</datalist></div></div><div class="frow"><div class="fg"><label class="fl">Placa</label><input class="fi" id="cvp" placeholder="ABC-1234"/></div><div class="fg"><label class="fl">Modelo / Ano</label><input class="fi" id="cvm" placeholder="Fiat Ducato 2022"/></div></div><div class="fg"><label class="fl">Oficina vinculada</label><select class="fs" id="cvo"><option value="">Selecione...</option>${oo}</select></div>
+<div class="fg"><label class="fl">Nº da Ata/Contrato vigente</label><input class="fi" id="cvata" placeholder="Ex: Ata 001/2025"/></div>`,
   [{l:'Cancelar',fn:'closeM()'},{l:'Salvar',p:true,fn:'salvarVeic()'}]);
 }
 async function salvarVeic() {
   const f=document.getElementById('cvf').value.trim(),t=document.getElementById('cvt').value,p=document.getElementById('cvp').value.trim(),m=document.getElementById('cvm').value.trim(),o=document.getElementById('cvo').value;
   if(!f||!p||!m){alert('Preencha todos os campos.');return;}
-  const newId = await fbAdd('veiculos',{frota:f,tipo:t,placa:p,modelo:m,oficina_id:o});
-  S.veiculos.push({id:newId,frota:f,tipo:t,placa:p,modelo:m,oficina_id:o});
+  const ata=document.getElementById('cvata').value.trim(); const newId = await fbAdd('veiculos',{frota:f,tipo:t,placa:p,modelo:m,oficina_id:o,ata_contrato:ata});
+  S.veiculos.push({id:newId,frota:f,tipo:t,placa:p,modelo:m,oficina_id:o,ata_contrato:ata});
   closeM(); toast('Veículo cadastrado!'); nav('veiculos');
 }
 function editVeic(id) {
   const v=S.veiculos.find(x=>x.id===id);
   const oo=S.oficinas.map(o=>`<option value="${o.id}" ${o.id===v.oficina_id?'selected':''}>${o.nome}</option>`).join('');
-  modal('Editar Veículo',`<div class="frow"><div class="fg"><label class="fl">Nº da Frota</label><input class="fi" id="evf" value="${v.frota}"/></div><div class="fg"><label class="fl">Tipo</label><select class="fs" id="evt"><option ${v.tipo==='Ambulância'?'selected':''}>Ambulância</option><option ${v.tipo==='Van'?'selected':''}>Van</option><option ${v.tipo==='Van Cadeirante'?'selected':''}>Van Cadeirante</option><option ${v.tipo==='Ônibus'?'selected':''}>Ônibus</option><option ${v.tipo==='Carro Passeio'?'selected':''}>Carro Passeio</option><option ${v.tipo==='Administrativo'?'selected':''}>Administrativo</option></select></div></div><div class="frow"><div class="fg"><label class="fl">Placa</label><input class="fi" id="evp" value="${v.placa}"/></div><div class="fg"><label class="fl">Modelo</label><input class="fi" id="evm" value="${v.modelo}"/></div></div><div class="fg"><label class="fl">Oficina vinculada</label><select class="fs" id="evo"><option value="">Selecione...</option>${oo}</select></div>`,
+  modal('Editar Veículo',`<div class="frow"><div class="fg"><label class="fl">Nº da Frota</label><input class="fi" id="evf" value="${v.frota}"/></div><div class="fg"><label class="fl">Tipo</label><input class="fi" id="evt" list="tipos-veiculo" value="${v.tipo}" placeholder="Ex: Ambulância, Ritinha..."/></div></div><div class="frow"><div class="fg"><label class="fl">Placa</label><input class="fi" id="evp" value="${v.placa}"/></div><div class="fg"><label class="fl">Modelo</label><input class="fi" id="evm" value="${v.modelo}"/></div></div><div class="fg"><label class="fl">Oficina vinculada</label><select class="fs" id="evo"><option value="">Selecione...</option>${oo}</select></div>
+<div class="fg"><label class="fl">Nº da Ata/Contrato vigente</label><input class="fi" id="evata" value="${v.ata_contrato||''}" placeholder="Ex: Ata 001/2025"/></div>`,
   [{l:'Cancelar',fn:'closeM()'},{l:'Salvar',p:true,fn:`saveEV('${id}')`}]);
 }
 async function saveEV(id) {
   const f=document.getElementById('evf').value.trim(),t=document.getElementById('evt').value,p=document.getElementById('evp').value.trim(),m=document.getElementById('evm').value.trim(),o=document.getElementById('evo').value;
-  await fbUpdate('veiculos',id,{frota:f,tipo:t,placa:p,modelo:m,oficina_id:o});
-  const v=S.veiculos.find(x=>x.id===id); Object.assign(v,{frota:f,tipo:t,placa:p,modelo:m,oficina_id:o});
+  const ata2=document.getElementById('evata').value.trim(); await fbUpdate('veiculos',id,{frota:f,tipo:t,placa:p,modelo:m,oficina_id:o,ata_contrato:ata2});
+  const v=S.veiculos.find(x=>x.id===id); Object.assign(v,{frota:f,tipo:t,placa:p,modelo:m,oficina_id:o,ata_contrato:ata2});
   closeM(); toast('Veículo atualizado!'); nav('veiculos');
 }
 function openCadOficina() { modal('Nova Oficina',`<div class="fg"><label class="fl">Nome da oficina</label><input class="fi" id="con"/></div><div class="fg"><label class="fl">Especialidade</label><input class="fi" id="cot" placeholder="Ex: Mecânica Geral"/></div>`,[{l:'Cancelar',fn:'closeM()'},{l:'Salvar',p:true,fn:'salvarOfic()'}]); }
