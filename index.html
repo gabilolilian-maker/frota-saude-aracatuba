@@ -376,8 +376,8 @@ async function carregarDados() {
   S.veiculos = await fbGet('veiculos');
   S.oficinas = await fbGet('oficinas');
   S.os = await fbGet('os');
-  // Ordenar OS por número
   S.os.sort((a,b) => (a.numero||'').localeCompare(b.numero||''));
+  S.veiculos.sort((a,b) => (a.frota||'').localeCompare(b.frota||'', undefined, {numeric:true}));
 }
 
 // ===================== UTILITÁRIOS =====================
@@ -774,7 +774,7 @@ async function cancelarOS(id) {
 
 function pgRel() {
   const ofOpts = S.oficinas.map(o => `<option value="${o.id}">${o.nome}</option>`).join('');
-  const vOpts = S.veiculos.map(v => `<option value="${v.id}">${v.frota} — ${v.tipo} (${v.placa})</option>`).join('');
+  const vOpts = S.veiculos.slice().sort((a,b)=>(a.frota||'').localeCompare(b.frota||'',undefined,{numeric:true})).map(v => `<option value="${v.id}">${v.frota} — ${v.tipo} (${v.placa})</option>`).join('');
   return `<div class="card" style="margin-bottom:16px;">
     <div class="card-title"><i class="bi bi-funnel"></i> Filtros</div>
     <div class="filtros">
@@ -864,7 +864,7 @@ function renderRelResultados(lista) {
 }
 
 function pgVeic() {
-  const cards = S.veiculos.map(v => { const of = S.oficinas.find(x=>x.id===v.oficina_id)?.nome||'Não vinculada'; return `<div class="cc-card"><div class="cc-icon"><i class="ti ${imap[v.tipo]||'bi-bi-car-front'}"></i></div><div class="cc-title">Frota ${v.frota} — ${v.tipo}</div><div class="cc-sub">${v.placa} · ${v.modelo}</div><div class="cc-tag"><i class="bi bi-tools" style="font-size:11px"></i> ${of}</div><div class="cc-acts"><button class="btn btn-xs" onclick="editVeic('${v.id}')"><i class="bi bi-pencil"></i> Editar</button></div></div>`; }).join('');
+  const cards = S.veiculos.slice().sort((a,b) => (a.frota||'').localeCompare(b.frota||'', undefined, {numeric:true})).map(v => { const of = S.oficinas.find(x=>x.id===v.oficina_id)?.nome||'Não vinculada'; return `<div class="cc-card"><div class="cc-icon"><i class="ti ${imap[v.tipo]||'bi-bi-car-front'}"></i></div><div class="cc-title">Frota ${v.frota} — ${v.tipo}</div><div class="cc-sub">${v.placa} · ${v.modelo}</div><div class="cc-tag"><i class="bi bi-tools" style="font-size:11px"></i> ${of}</div><div class="cc-acts"><button class="btn btn-xs" onclick="editVeic('${v.id}')"><i class="bi bi-pencil"></i> Editar</button></div></div>`; }).join('');
   return `<div class="sec-head"><h2>Veículos <span class="sec-cnt">(${S.veiculos.length})</span></h2></div><div class="cc-grid">${cards||'<span style="color:#aaa;font-size:13px;">Nenhum veículo cadastrado</span>'}</div>`;
 }
 function pgOfic() {
@@ -885,7 +885,7 @@ function closeM() { document.getElementById('mwrap').innerHTML = ''; segOn = fal
 
 let segOn = false;
 function openNovaOS() {
-  const vo = S.veiculos.map(v=>`<option value="${v.id}">${v.frota} — ${v.tipo} (${v.placa})</option>`).join('');
+  const vo = S.veiculos.slice().sort((a,b)=>(a.frota||'').localeCompare(b.frota||'',undefined,{numeric:true})).map(v=>`<option value="${v.id}">${v.frota} — ${v.tipo} (${v.placa})</option>`).join('');
   modal('Nova Ordem de Serviço', `
     <div class="fg"><label class="fl">Veículo / Frota</label><select class="fs" id="nv" onchange="loadOf()">${vo}</select></div>
     <div id="nvi" style="display:none;padding:10px 13px;background:#dbeafe;border-radius:8px;font-size:12px;color:#1e40af;margin-bottom:12px;"></div>
