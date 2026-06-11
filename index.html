@@ -317,7 +317,7 @@ const S = {
 };
 
 const LIMITE_DIAS = 10;
-const ENAMES = ['Solicitação de Orçamento','Aprovação do Orçamento','Solicitação de Empenho','Liberação do Empenho','Comunicação para Oficina','Atesto de Nota Fiscal'];
+const ENAMES = ['Orçamento','Aprovação do Orçamento','Solicitação de Empenho','Liberação do Empenho','Comunicação para Oficina','Nota Fiscal'];
 const ADM_ONLY = [4,6];
 const imap = {'Ambulância':'bi-bi-truck-front','Van':'bi-bi-car-front','Van Cadeirante':'bi-bi-person-wheelchair','Ônibus':'bi-bi-bus-front','Carro Passeio':'bi-bi-car-front','Administrativo':'bi-bi-briefcase'};
 
@@ -482,6 +482,17 @@ function pgDash() {
   const ofLabels = Object.keys(gof).slice(0,6);
   const ofVals = ofLabels.map(k => gof[k]);
 
+  // Gastos por frota
+  const gfrota = {};
+  S.os.filter(o => o.valor && !o.cancelada).forEach(o => {
+    const v = getV(o);
+    const k = `${v?.frota||'?'} - ${v?.tipo||''}`;
+    gfrota[k] = (gfrota[k]||0) + o.valor;
+  });
+  const frotaEntries = Object.entries(gfrota).sort((a,b) => b[1]-a[1]).slice(0,8);
+  const frotaLabels = frotaEntries.map(e => e[0]);
+  const frotaVals = frotaEntries.map(e => e[1]);
+
   // Alerta compacto
   const atList = osAtrasadas();
   let alertHtml = '';
@@ -540,10 +551,18 @@ function pgDash() {
         <div style="text-align:center;margin-top:8px;font-size:13px;color:#888;">${total} OS no total</div>
       </div>
 
-      <div class="card">
-        <div class="card-title"><i class="bi bi-bar-chart"></i> Gastos por oficina (R$)</div>
-        <div style="position:relative;height:${Math.max(200, ofLabels.length * 38 + 40)}px;">
-          <canvas id="chart-oficina" role="img" aria-label="Gráfico de barras horizontais com gastos por oficina">${ofLabels.map((k,i)=>k+': R$ '+ofVals[i]).join(', ')||'Sem dados'}</canvas>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="card">
+          <div class="card-title"><i class="bi bi-bar-chart"></i> Gastos por oficina (R$)</div>
+          <div style="position:relative;height:${Math.max(180, ofLabels.length * 36 + 40)}px;">
+            <canvas id="chart-oficina" role="img" aria-label="Gráfico de barras com gastos por oficina">${ofLabels.map((k,i)=>k+': R$ '+ofVals[i]).join(', ')||'Sem dados'}</canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><i class="bi bi-truck-front"></i> Gastos por frota (R$)</div>
+          <div style="position:relative;height:${Math.max(180, frotaLabels.length * 36 + 40)}px;">
+            <canvas id="chart-frota" role="img" aria-label="Gráfico de barras com gastos por frota">${frotaLabels.map((k,i)=>k+': R$ '+frotaVals[i]).join(', ')||'Sem dados'}</canvas>
+          </div>
         </div>
       </div>
 
@@ -608,6 +627,34 @@ function pgDash() {
           scales: {
             x: { ticks: { callback: v => 'R$ ' + v.toLocaleString('pt-BR'), font: { size: 11 } } },
             y: { ticks: { font: { size: 11 } } }
+          }
+        }
+      });
+    }
+
+    // Gráfico gasto por frota
+    if (window._chartFrota) { window._chartFrota.destroy(); }
+    const ctxFrota = document.getElementById('chart-frota');
+    if (ctxFrota && frotaLabels.length && typeof Chart !== 'undefined') {
+      window._chartFrota = new Chart(ctxFrota, {
+        type: 'bar',
+        data: {
+          labels: frotaLabels,
+          datasets: [{
+            label: 'Gasto R$',
+            data: frotaVals,
+            backgroundColor: '#c8972a',
+            borderRadius: 4
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { callback: v => 'R$ ' + v.toLocaleString('pt-BR'), font: { size: 11 } } },
+            y: { ticks: { font: { size: 10 } } }
           }
         }
       });
@@ -684,7 +731,16 @@ function pgOSD(id) {
         if (e.n===2) flds = `<div class="fg" style="margin-bottom:8px;"><label class="fl">Valor do orçamento (R$)</label><input class="fi" id="sv" type="number" placeholder="0,00" style="max-width:180px;"/></div>`;
         if (e.n===4) flds = `<div class="frow" style="margin-bottom:8px;"><div><label class="fl">Nº do empenho</label><input class="fi" id="sen" placeholder="2025/0000"/></div><div><label class="fl">Data do empenho</label><input class="fi" type="date" id="sed"/></div></div>`;
         if (e.n===1) flds = `<div class="fg" style="margin-bottom:8px;"><label class="fl">Data da solicitação do orçamento</label><input class="fi" type="date" id="sdt1"/></div>`;
-        if (e.n===6) flds = `<div class="frow" style="margin-bottom:8px;"><div><label class="fl">Nº NF Serviço</label><input class="fi" id="snfn" placeholder="00000"/></div><div><label class="fl">Data NF Serviço</label><input class="fi" type="date" id="snfd"/></div></div><div class="frow" style="margin-bottom:8px;"><div><label class="fl">Nº NF Materiais (opcional)</label><input class="fi" id="snfnm" placeholder="00000"/></div><div><label class="fl">Data NF Materiais</label><input class="fi" type="date" id="snfdm"/></div></div><div class="fg" style="margin-bottom:8px;"><label class="fl">Valor total R$</label><input class="fi" id="snfval" type="number" placeholder="0,00" style="max-width:180px;"/></div>`;
+        if (e.n===6) flds = `
+          <div class="frow" style="margin-bottom:8px;">
+            <div><label class="fl">Nº NF Serviço</label><input class="fi" id="snfn" placeholder="00000"/></div>
+            <div><label class="fl">Nº NF Materiais (opcional)</label><input class="fi" id="snfnm" placeholder="00000"/></div>
+          </div>
+          <div class="frow" style="margin-bottom:8px;">
+            <div><label class="fl">Data da(s) NF(s)</label><input class="fi" type="date" id="snfd"/></div>
+            <div><label class="fl">Valor total R$</label><input class="fi" id="snfval" type="number" placeholder="0,00"/></div>
+          </div>`;
+        if(e.n===5) flds = `<div class="fg" style="margin-bottom:8px;"><label class="fl">Data comunicação à oficina</label><input class="fi" type="date" id="sdt5"/></div>`;
         act = `<div class="step-act">${flds}<button class="btn btn-p btn-sm" onclick="avancarEtapa('${id}',${e.n})"><i class="bi bi-check-lg"></i> Registrar etapa</button></div>`;
       }
     }
@@ -705,8 +761,15 @@ function pgOSD(id) {
             <div class="irow"><span class="ilbl">Frota</span><span class="ival">${v?.frota||'—'}</span></div>
             <div class="irow"><span class="ilbl">Oficina</span><span class="ival" style="font-size:12px">${of||'—'}</span>${os.seguradora?'<span class="badge b-gold" style="margin-top:5px;font-size:10px;">Seguradora</span>':''}</div>
           </div>
-          <div class="irow"><span class="ilbl">Problema relatado</span><span class="ival">${os.problema}</span></div>
+          <div class="irow">
+            <span class="ilbl">Problema / Serviço
+              ${isAdm?`<button class="btn btn-xs" style="margin-left:8px;padding:2px 7px;" onclick="editarProblema('${os.id}')"><i class="bi bi-pencil"></i> Editar</button>`:''}
+            </span>
+            <span class="ival" id="prob-texto-${os.id}">${os.problema}</span>
+          </div>
           ${os.processo_1doc?`<div class="irow" style="margin-top:10px;"><span class="ilbl">Processo 1Doc</span><span class="ival" style="color:#1a4f8a">${os.processo_1doc}</span></div>`:''}
+          ${os.autorizado?`<div class="irow" style="margin-top:8px;"><span class="ilbl">Serviço autorizado</span><span class="ival">${os.autorizado==='Sim'?'✅ Sim':os.autorizado==='Não'?'❌ Não':'⏳ Pendente'}</span></div>`:''}
+          ${os.data_orc?`<div class="irow" style="margin-top:8px;"><span class="ilbl">Data solicitação orçamento</span><span class="ival">${new Date(os.data_orc+'T00:00:00').toLocaleDateString('pt-BR')}</span></div>`:''}
           ${os.valor ? `<div class="irow" style="margin-top:14px;"><span class="ilbl">Valor aprovado</span><span style="font-size:22px;font-weight:700;color:#1a4f8a">R$ ${os.valor.toLocaleString('pt-BR')}</span></div>` : ''}
           ${os.cancelada ? `<div style="margin-top:14px;padding:12px 16px;background:#fee2e2;border-radius:8px;font-size:13px;color:#991b1b;border-left:3px solid #c0392b"><strong>OS Cancelada</strong>${os.motivo_cancel?' — '+os.motivo_cancel:''}</div>` : ''}
         </div>
@@ -734,18 +797,41 @@ async function avancarEtapa(osId, n) {
   const etapas = [...os.etapas];
   const etapa = {...etapas[n-1]};
   const hoje = new Date().toLocaleDateString('pt-BR');
-  const hojeISO = new Date().toISOString().split('T')[0]; const proc1doc = document.getElementById('n1doc')?.value.trim()||'';
+  const hojeISO = new Date().toISOString().split('T')[0];
+  const proc1doc = document.getElementById('n1doc')?.value.trim()||'';
+  const dtOrc = document.getElementById('ndt-orc')?.value||'';
+  const autorizado = document.getElementById('n-autorizado')?.value||'Pendente';
   let obs = '';
-  if (n===1) { const dt1 = document.getElementById('sdt1')?.value; if(dt1) obs = `Solicitado em: ${new Date(dt1+'T00:00:00').toLocaleDateString('pt-BR')}`; }
-  if (n===2) { const val = document.getElementById('sv')?.value; if (!val) { alert('Informe o valor.'); return; } obs = `Orçamento: R$ ${parseFloat(val).toLocaleString('pt-BR')}`; etapa.valor = parseFloat(val); }
+  if (n===1) {
+    const dt1 = document.getElementById('sdt1')?.value;
+    const sv = document.getElementById('sv')?.value;
+    const sprob = document.getElementById('sprob')?.value.trim();
+    if (!sv) { alert('Informe o valor do orçamento.'); return; }
+    etapa.valor = parseFloat(sv);
+    if (sprob) { os.problema = sprob; updates.problema = sprob; }
+    obs = `${dt1?'Data: '+new Date(dt1+'T00:00:00').toLocaleDateString('pt-BR')+' | ':''} R$ ${parseFloat(sv).toLocaleString('pt-BR')}`;
+  }
+  if (n===2) { obs = 'Orçamento aprovado'; }
+  if (n===3) {
+    const s1doc = document.getElementById('s1doc')?.value.trim();
+    const sdt3 = document.getElementById('sdt3')?.value;
+    if (s1doc) { os.processo_1doc = s1doc; updates.processo_1doc = s1doc; }
+    obs = `${s1doc?'1Doc: '+s1doc:''}${sdt3?' | Solicitado: '+new Date(sdt3+'T00:00:00').toLocaleDateString('pt-BR'):''}`.replace(/^\s*\|\s*/,'').trim() || 'Empenho solicitado';
+  }
   if (n===4) { const en = document.getElementById('sen')?.value, ed = document.getElementById('sed')?.value; if (!en||!ed) { alert('Informe nº e data do empenho.'); return; } obs = `Empenho nº ${en}, dt: ${new Date(ed+'T00:00:00').toLocaleDateString('pt-BR')}`; }
-  if (n===6) { 
-    const nfn = document.getElementById('snfn')?.value, nfd = document.getElementById('snfd')?.value;
-    if (!nfn||!nfd) { alert('Informe nº e data da NF de serviço.'); return; }
-    const nfnm = document.getElementById('snfnm')?.value, nfdm = document.getElementById('snfdm')?.value;
+if (n===5) {
+    const sdt5 = document.getElementById('sdt5')?.value;
+    obs = sdt5 ? `Comunicado em: ${new Date(sdt5+'T00:00:00').toLocaleDateString('pt-BR')}` : 'Oficina comunicada';
+  }
+  if (n===6) {
+    const nfn = document.getElementById('snfn')?.value;
+    const nfd = document.getElementById('snfd')?.value;
+    const nfnm = document.getElementById('snfnm')?.value;
     const nfval = document.getElementById('snfval')?.value;
-    obs = `NF Serv: ${nfn} (${new Date(nfd+'T00:00:00').toLocaleDateString('pt-BR')})`;
-    if(nfnm) obs += ` | NF Mat: ${nfnm} (${new Date((nfdm||nfd)+'T00:00:00').toLocaleDateString('pt-BR')})`;
+    if (!nfn||!nfd) { alert('Informe nº da NF de serviço e data.'); return; }
+    const dtNF = new Date(nfd+'T00:00:00').toLocaleDateString('pt-BR');
+    obs = `NF Serviço: ${nfn} (${dtNF})`;
+    if(nfnm) obs += ` | NF Materiais: ${nfnm} (${dtNF})`;
     if(nfval) obs += ` | Total: R$ ${parseFloat(nfval).toLocaleString('pt-BR')}`;
   }
   etapa.data = hoje; etapa.usuario = S.user.nome; etapa.obs = obs;
@@ -887,13 +973,29 @@ let segOn = false;
 function openNovaOS() {
   const vo = S.veiculos.slice().sort((a,b)=>(a.frota||'').localeCompare(b.frota||'',undefined,{numeric:true})).map(v=>`<option value="${v.id}">${v.frota} — ${v.tipo} (${v.placa})</option>`).join('');
   modal('Nova Ordem de Serviço', `
-    <div class="fg"><label class="fl">Veículo / Frota</label><select class="fs" id="nv" onchange="loadOf()">${vo}</select></div>
-    <div id="nvi" style="display:none;padding:10px 13px;background:#dbeafe;border-radius:8px;font-size:12px;color:#1e40af;margin-bottom:12px;"></div>
-    <div class="fg"><label class="fl">Oficina vinculada</label><input class="fi" id="nod" readonly style="background:#f5f5f5;color:#888;"/></div>
-    <button class="tseg" id="nsb" onclick="toggleSeg()"><div class="ticon" id="nsi"></div> Acionar Seguradora</button>
-    <div id="nsf" style="display:none;margin-top:12px;"><div class="fg"><label class="fl">Prestador da Seguradora</label><input class="fi" id="nsp" placeholder="Nome da oficina autorizada"/></div></div>
-    <div class="fg" style="margin-top:12px;"><label class="fl">Nº Processo 1Doc (opcional)</label><input class="fi" id="n1doc" placeholder="Ex: 12345/2025"/></div>
-    <div class="fg"><label class="fl">Descrição do problema</label><textarea class="fi" id="npr" rows="3" style="resize:vertical;" placeholder="Descreva o problema principal..."></textarea></div>`,
+    <div style="background:#f0f4ff;border-radius:8px;padding:12px 16px;margin-bottom:16px;border-left:3px solid #1a4f8a;">
+      <div style="font-size:11px;font-weight:700;color:#1a4f8a;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">Fase 1 — Identificação</div>
+      <div class="fg"><label class="fl">Veículo / Frota</label><select class="fs" id="nv" onchange="loadOf()">${vo}</select></div>
+      <div id="nvi" style="display:none;padding:9px 12px;background:#dbeafe;border-radius:8px;font-size:12px;color:#1e40af;margin-bottom:12px;"></div>
+      <div class="fg"><label class="fl">Oficina vinculada</label><input class="fi" id="nod" readonly style="background:#f5f5f5;color:#888;"/></div>
+      <button class="tseg" id="nsb" onclick="toggleSeg()"><div class="ticon" id="nsi"></div> Acionar Seguradora</button>
+      <div id="nsf" style="display:none;margin-top:12px;"><div class="fg"><label class="fl">Prestador da Seguradora</label><input class="fi" id="nsp" placeholder="Nome da oficina autorizada"/></div></div>
+      <div class="frow" style="margin-top:12px;">
+        <div class="fg"><label class="fl">Data solicitação do orçamento</label><input class="fi" type="date" id="ndt-orc"/></div>
+        <div class="fg"><label class="fl">Serviço autorizado?</label>
+          <select class="fs" id="n-autorizado">
+            <option value="Sim">✅ Sim</option>
+            <option value="Não">❌ Não</option>
+            <option value="Pendente">⏳ Pendente</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div style="background:#f9f9f9;border-radius:8px;padding:12px 16px;border-left:3px solid #888;">
+      <div style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">Fase 2 — Descrição</div>
+      <div class="fg" style="margin-bottom:0;"><label class="fl">Problema / Serviço a ser executado</label><textarea class="fi" id="npr" rows="3" style="resize:vertical;" placeholder="Descreva o problema ou serviço..."></textarea></div>
+      <div class="fg" style="margin-top:10px;margin-bottom:0;"><label class="fl">Nº Processo 1Doc (opcional)</label><input class="fi" id="n1doc" placeholder="Ex: 12345/2025"/></div>
+    </div>`,
   [{l:'Cancelar',fn:'closeM()'},{l:'Criar OS',p:true,fn:'criarOS()'}]);
   setTimeout(loadOf, 50);
 }
@@ -905,13 +1007,16 @@ async function criarOS() {
   const prob = document.getElementById('npr').value.trim();
   if (!prob) { alert('Descreva o problema.'); return; }
   const v = S.veiculos.find(x => x.id === vid);
-  const hojeISO = new Date().toISOString().split('T')[0]; const proc1doc = document.getElementById('n1doc')?.value.trim()||'';
+  const hojeISO = new Date().toISOString().split('T')[0];
+  const proc1doc = document.getElementById('n1doc')?.value.trim()||'';
+  const dtOrc = document.getElementById('ndt-orc')?.value||'';
+  const autorizado = document.getElementById('n-autorizado')?.value||'Pendente';
   const novaOS = {
     numero: gerarNumOS(),
     veiculo_id: vid,
     oficina_id: segOn ? null : (v?.oficina_id || null),
     seguradora: segOn,
-    prestador: segOn ? (document.getElementById('nsp').value||'') : '', processo_1doc: proc1doc,
+    prestador: segOn ? (document.getElementById('nsp').value||'') : '', processo_1doc: proc1doc, data_orc: dtOrc, autorizado: autorizado,
     problema: prob,
     valor: null,
     status: 'em_andamento',
@@ -996,6 +1101,27 @@ async function saveEU(id) {
   const upd={nome:n,login:l,perfil:p,ativo:a}; if(s) upd.senha=s;
   await fbUpdate('usuarios',id,upd); Object.assign(u,upd);
   closeM(); toast('Usuário atualizado!'); nav('usuarios');
+}
+
+function editarProblema(osId) {
+  const os = S.os.find(x => x.id === osId); if (!os) return;
+  modal('Editar Descrição do Problema', `
+    <div class="fg">
+      <label class="fl">Problema / Serviço a ser executado</label>
+      <textarea class="fi" id="edit-prob" rows="4" style="resize:vertical;">${os.problema}</textarea>
+    </div>`,
+  [{l:'Cancelar',fn:'closeM()'},{l:'Salvar',p:true,fn:`salvarProblema('${osId}')`}]);
+}
+
+async function salvarProblema(osId) {
+  const os = S.os.find(x => x.id === osId); if (!os) return;
+  const novo = document.getElementById('edit-prob')?.value.trim();
+  if (!novo) { alert('Descreva o problema.'); return; }
+  await fbUpdate('os', osId, {problema: novo});
+  os.problema = novo;
+  closeM();
+  toast('Problema atualizado!');
+  pgOSD(osId);
 }
 
 function toggleAlerta() {
